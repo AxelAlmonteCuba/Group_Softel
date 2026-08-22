@@ -1,35 +1,40 @@
-# Regla 02: Arquitectura del Backend y Patrones de Diseño
+---
+trigger: always_on
+---
 
-Esta regla establece los patrones arquitectónicos, el stack tecnológico y las directrices de código para el backend central de Softel.
+# Regla 02: Arquitectura del Backend, Servicios y Transacciones
+
+Esta regla establece los patrones de arquitectura, diseño de capas, manejo transaccional ACID, procesamiento de almacenamiento y directrices de código en NestJS para Softel.
 
 ---
 
 ## 1. Principio de Backend Único y Stack Tecnológico
 
-El backend central atiende tanto a la aplicación móvil como a la aplicación web (ambas construidas en React Native + Expo). **Prohibido crear backends o servicios separados por plataforma**.
+El backend central atiende de forma unificada tanto a la aplicación web como a la aplicación móvil. **Prohibido crear backends o servicios separados por plataforma**.
 
-- **Runtime & Lenguaje:** Node.js (v20+ LTS) + TypeScript (`strict: true`).
+- **Runtime & Lenguaje:** Node.js (v20+ LTS) con TypeScript (`strict: true`).
 - **Framework:** NestJS 11.x (Inyección de Dependencias, Módulos, Controladores, Servicios, Guards, Pipes e Interceptores).
 - **Persistencia:** TypeORM con driver `mysql2`.
 - **Validación:** `class-validator` + `class-transformer` con `ValidationPipe` global.
-- **Multimedia:** Sharp para compresión y conversión forzada a **WebP**.
+- **Procesamiento de Imágenes:** Sharp para compresión y conversión obligatoria a formato **WebP**.
+- **Generación de Documentos:** Librerías backend especializadas para emitir reportes en formato **Excel (.xlsx)** y **PDF**.
 
 ---
 
 ## 2. Arquitectura Modular y Capas Limpias
 
-El código se organiza estrictamente por módulos de dominio en `src/modulos/<dominio>/`:
+El código se organiza estrictamente por módulos de dominio dentro de `src/modulos/<dominio>/`:
 
 ```text
 src/modulos/
 ├── usuarios/
-├── reporte-fotografico/
 ├── caja-chica/
-├── motores/
-├── epp/
-├── administracion-interna/
-├── cobranzas/
-└── sincronizacion/
+├── reporte-fotografico/
+├── motores/                  # Módulo futuro
+├── epp/                      # Módulo futuro
+├── administracion-interna/   # Módulo futuro
+├── cobranzas/                # Módulo futuro
+└── sincronizacion/           # Módulo futuro
 ```
 
 ### Flujo Unidireccional en Capas
@@ -37,22 +42,38 @@ src/modulos/
 HTTP Request
    -> Controller (Rutas, DTOs de entrada, Documentación Swagger)
    -> Guards / Interceptors (Autenticación JWT, RBAC, Logging)
-   -> Service (Casos de Uso, Lógica de Negocio, Transacciones)
+   -> Service (Casos de Uso, Lógica de Negocio, Transacciones ACID)
    -> Repository / TypeORM (Consultas y Persistencia en MySQL)
    -> Base de Datos MySQL
 ```
 
-### Restricciones de Capas
-1. **Controladores:** Prohibido incluir lógica de negocio o consultas SQL directas.
-2. **Servicios:** Prohibido recibir o manipular objetos de transporte HTTP (`Request`, `Response`). Los servicios solo operan con DTOs y tipos puros de TypeScript.
-3. **Módulos:** No acceder a tablas de otro dominio de forma directa; comunicarse mediante servicios inyectados exportados.
+### Restricciones Estrictas de Capas
+1. **Controladores:** Prohibido incluir lógica de negocio, cálculos de saldos o sentencias SQL directas.
+2. **Servicios:** Prohibido recibir o manipular objetos de transporte HTTP (`Request`, `Response`). Operan exclusivamente con DTOs y tipos puros.
+3. **Aislamiento entre Módulos:** No consultar repositorios de otro dominio directamente; comunicarse a través de servicios inyectados exportados.
 
 ---
 
-## 3. Patrones de Diseño Mandatorios
+## 3. Transacciones ACID Obligatorias
 
-### 3.1. Patrón Adaptador y Estrategia para Almacenamiento
-Toda subida de archivos pasa por `StorageService` a través de una interfaz abstracta:
+Toda operación que afecte múltiples registros o involucre cálculos financieros debe ejecutarse dentro de una transacción gestionada por `DataSource.transaction()` o `QueryRunner`:
+
+1. **Aprobación o Apertura de Caja Chica:** Actualización de estado, asignación de aprobador, registro de fechas y configuración de saldo inicial.
+2. **Aprobación o Rechazo de Gastos:**
+   - Al aprobar un gasto: cambiar estado a `APROBADO`, asignar `usuario_aprobador_id`, y **recalcular atómicamente** `saldo_actual` y `saldo_final` en la tabla `cajas_chicas`.
+   - Al rechazar un gasto: cambiar estado a `RECHAZADO`, registrar `motivo_rechazo`, asignar `usuario_aprobador_id` y asegurar que no altere los saldos.
+3. **Cierre y Liquidación de Caja:** Conciliación final de saldos y congelamiento de estado.
+4. **Estructura de Reporte Fotográfico:** Creación o modificación de proyecto junto con sus partidas fotográficas.
+
+> [!WARNING]
+> Nunca dejar una caja con saldo actualizado si el gasto no se persistió con éxito, ni un gasto aprobado si el saldo de caja no fue recalculado en la misma transacción.
+
+---
+
+## 4. Patrón de Almacenamiento y Multimedia con Sharp
+
+### 4.1. Patrón Adaptador para Almacenamiento
+Toda interacción con archivos físicos se delega a `StorageService` implementando la interfaz:
 ```typescript
 export interface AlmacenamientoInterfaz {
   guardarArchivo(buffer: Buffer, rutaRelativa: string): Promise<string>;
@@ -60,19 +81,27 @@ export interface AlmacenamientoInterfaz {
   eliminarArchivo(rutaRelativa: string): Promise<boolean>;
 }
 ```
-- La estrategia se selecciona mediante `STORAGE_PROVIDER` (`local`, `r2`, `s3`).
-- **Prohibido:** Usar `fs`, `fs/promises` o SDKs de nube dentro de los módulos de negocio.
+- El proveedor se selecciona mediante la variable `STORAGE_PROVIDER` (`local`, `r2`, `s3`).
+- **Prohibido:** Usar `fs`, `fs/promises` o SDKs de nube dentro de los servicios de negocio.
 
-### 3.2. Procesamiento de Multimedia con Sharp
-- Toda imagen recibida se valida en MIME real y se convierte inmediatamente a **WebP**.
-- Se aplica compresión optimizada (factor calidad: 80%) y redimensionamiento seguro.
-- Las imágenes se guardan fuera de la base de datos con nombres inmutables `UUIDv4 + .webp`.
+### 4.2. Procesamiento de Imágenes
+- Validación obligatoria de tipo MIME real antes de procesar.
+- Conversión inmediata a **WebP** y compresión optimizada (factor calidad: 80%).
+- Almacenamiento con identificador inmutable: `UUIDv4 + .webp`.
+- **En la base de datos se almacena únicamente la ruta relativa** (ej. `/gastos/2026/08/uuid.webp`).
+- Limpieza de archivos temporales si la inserción en base de datos falla.
 
-### 3.3. Transacciones ACID
-Toda operación que afecte múltiples tablas (aprobación de cajas chicas, liquidación de saldos con actualización de gastos, creación de proyectos con partidas) debe envolverse en una transacción con `DataSource.transaction()` o `QueryRunner`.
+---
 
-### 3.4. Idempotencia y Trazabilidad
-Los endpoints de registro admiten un `id_operacion` (UUID) para garantizar que solicitudes repetidas por problemas de conexión no dupliquen movimientos contables ni registros operativos.
+## 5. Generación y Descarga de Documentos (Excel y PDF)
 
-### 3.5. Versionado de API
-Todos los endpoints se exponen bajo el prefijo unificado `/api/v1/`.
+- **Reportes Fotográficos en Excel:** El backend consulta `proyectos_fotograficos`, `partidas_fotograficas` y `registros_fotograficos`, y genera el archivo `.xlsx` en memoria para su descarga directa.
+- **Sin tablas innecesarias:** No crear tablas intermedias para descargas a menos que se requiera una auditoría formal de descargas aprobada.
+- **Validación de Permisos en Descarga:** La generación de archivos respeta las políticas RBAC del backend.
+
+---
+
+## 6. Idempotencia y Versionado
+
+- **Idempotencia:** Los endpoints de mutación sensible aceptan un encabezado o campo `id_operacion` (UUID) para evitar duplicidad de registros en reintentos de red.
+- **Versionado Global:** Todos los endpoints se exponen obligatoriamente bajo el prefijo unificado `/api/v1/`.
