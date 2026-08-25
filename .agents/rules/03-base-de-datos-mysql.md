@@ -89,7 +89,7 @@ Registro y comprobante individual de gasto asociado a una caja.
 | Campo | Tipo | Nulabilidad / Defecto | Descripción / Regla |
 | :--- | :--- | :--- | :--- |
 | `id` | `CHAR(36)` | **PK**, NOT NULL | UUID del gasto |
-| `caja_chica_id` | `CHAR(36)` | **FK**, NOT NULL | Caja chica asociada (`ON DELETE RESTRICT`) |
+| `caja_chica_id` | `CHAR(36)` | **FK**, NULL | Caja chica asociada o NULL si es reembolso directo (`ON DELETE SET NULL`) |
 | `usuario_gasto_id` | `CHAR(36)` | **FK**, NOT NULL | Usuario que registró o ejecutó el gasto |
 | `categoria_id` | `INT` | **FK**, NOT NULL | Categoría del gasto (`ON DELETE RESTRICT`) |
 | `monto` | `DECIMAL(10,2)` | NOT NULL | Importe del gasto (> 0) |
@@ -176,7 +176,7 @@ LEFT JOIN (
         caja_chica_id,
         COALESCE(SUM(monto), 0) AS total_aprobado
     FROM gastos
-    WHERE estado = 'APROBADO'
+    WHERE estado = 'APROBADO' AND caja_chica_id IS NOT NULL
     GROUP BY caja_chica_id
 ) g ON g.caja_chica_id = cc.id
 SET

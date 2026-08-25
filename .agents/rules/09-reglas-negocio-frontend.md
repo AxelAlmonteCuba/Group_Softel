@@ -13,7 +13,10 @@ Esta regla alinea el comportamiento del cliente móvil/web con la base de datos 
 
 ## 2. Gastos y Caja Chica
 - **Estados de Gasto**: `ExpenseStatus = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO'`.
-- **Restricción Estricta**: En el frontend, **no se permite registrar un gasto sin tener una caja chica asignada** (la DB requiere `caja_chica_id` obligatoriamente).
+- **Registro de Gasto Sin Caja Chica**: Si el usuario no tiene una caja chica activa, el sistema **no debe bloquear el formulario**. 
+  - La interfaz mostrará el aviso: *"No tienes una caja chica activa. Este gasto será enviado a liquidación para revisión administrativa."*
+  - El botón cambiará a: *"Enviar gasto a liquidación"*.
+  - Estos gastos independientes no afectan ni se mezclan con los saldos de cajas chicas existentes.
 
 ---
 
