@@ -19,6 +19,8 @@ const PasswordInput = ({ value, onChangeText, placeholder }: Props) => {
                 style={[styles.textInput, { marginBottom: 0 }]}
                 placeholder={placeholder}
                 secureTextEntry={!mostrarClave}
+                value={value}
+                onChangeText={onChangeText}
             />
             <TouchableOpacity
                 style={styles.iconOjo}
