@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
     },
     basicTitle: {
         fontSize: 24,
-        fontWeight: 'semibold',
+        fontWeight: 'bold',
         color: colors.textPrimary,
         textAlign: 'center',
         marginBottom: 9,
@@ -52,6 +52,12 @@ export const styles = StyleSheet.create({
         textAlign: 'left',
         marginBottom: 9,
     },
+    titleHome: {
+        fontSize: 18,
+        fontWeight: 'semibold',
+        color: colors.textPrimary,
+        textAlign: 'left',
+    },
     textInput: {
         borderColor: colors.border,
         borderWidth: 1,
@@ -70,6 +76,24 @@ export const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    topBar: {
+        backgroundColor: colors.surface,
+        width: '100%',
+        height: 90,
+        borderWidth: 1,
+        borderColor: colors.border,
+        justifyContent: 'space-between', // Empuja el contenido hacia abajo
+        paddingBottom: 5,          // Espacio desde abajo
+        paddingHorizontal: 20,      // Espacio a los lados
+        flexDirection: 'row'
+    },
+    imageProfile: {
+        width: 50,
+        height: 50,
+        borderRadius: 25, // La mitad exacta del width/height lo hace un círculo perfecto
+        borderWidth: 2,
+        borderColor: colors.border, // Puedes cambiarlo a colors.border si prefieres gris
     }
 
 })
