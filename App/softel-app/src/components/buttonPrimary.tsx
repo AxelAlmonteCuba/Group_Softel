@@ -1,10 +1,15 @@
 import { TouchableOpacity, Text } from 'react-native';
 import { styles } from '../theme/styles';
 
-const buttonPrimary = () => {
+interface props {
+    text: string;
+    onPress: () => void;
+}
+
+const buttonPrimary = ({ text, onPress }: props) => {
     return (
-        <TouchableOpacity style={styles.buttonPrimary}>
-            <Text style={styles.textButtonPrimary}>Iniciar Sesion</Text>
+        <TouchableOpacity onPress={onPress} style={styles.buttonPrimary}>
+            <Text style={styles.textButtonPrimary}>{text}</Text>
         </TouchableOpacity>
     )
 }
