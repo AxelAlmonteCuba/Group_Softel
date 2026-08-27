@@ -7,17 +7,14 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  exito: boolean;
-  datos: {
-    token: string;
-    usuario: {
-      id: string;
-      nombres: string;
-      apellidos: string;
-      correo: string;
-      rol: 'ADMINISTRADOR' | 'CONTADOR' | 'SUPERVISOR' | 'TRABAJADOR';
-      cargo: string;
-    };
+  access_token: string;
+  usuario: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    rol: 'ADMINISTRADOR' | 'CONTADOR' | 'SUPERVISOR' | 'TRABAJADOR';
+    cargo: string;
   };
 }
 

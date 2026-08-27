@@ -38,15 +38,21 @@ const LoginScreen = () => {
       const response = await authService.login({ correo, clave });
 
       // 4. Guardar sesión en el store
-      setSession(response.datos.token, response.datos.usuario);
+      setSession(response.access_token, response.usuario);
 
       // La navegación al Home ocurre automáticamente desde App.tsx
       // porque isAuthenticated cambia a true
 
     } catch (err: any) {
+      console.log('\n❌ --- ERROR DE AXIOS ---');
+      console.log('Mensaje:', err.message);
+      console.log('URL intentada:', err.config?.url);
+      console.log('Data backend:', err.response?.data);
+      console.log('-------------------------\n');
+
       // Manejo de errores del backend
       const mensajeBackend = err?.response?.data?.mensaje;
-      setError(mensajeBackend ?? 'Error de conexión. Verifique su red.');
+      setError(mensajeBackend ?? `Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
