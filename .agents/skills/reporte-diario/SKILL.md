@@ -16,6 +16,7 @@ Esta skill define el comportamiento del agente al empezar y terminar la jornada 
 ## 2. Cuando el usuario dice "Cierra sesión" o "Cerramos sesión"
 - Es momento de generar el **Reporte Diario Ejecutivo para WhatsApp**.
 - Analiza todo lo trabajado **exclusivamente desde que se dijo "Inicia sesión" hoy**. No mezcles tareas de días anteriores.
+- **Incluye cambios manuales:** Revisa el estado del espacio de trabajo (analizando los archivos guardados recientemente o usando comandos como `git status`) para identificar e incluir en el reporte los avances que el usuario haya hecho manualmente en el código, sin limitarte solo a las acciones ejecutadas por el agente.
 - **Evita toda jerga técnica.** Traduce conceptos complejos a valor de negocio.
 
 ## 3. Formato Ultra-Compacto (Obligatorio)

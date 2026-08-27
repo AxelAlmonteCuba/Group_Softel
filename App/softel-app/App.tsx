@@ -12,7 +12,8 @@ export default function App() {
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar style="light" />
         {/* Navega automáticamente según el estado de sesión */}
-        {isAuthenticated ? <HomeScreen /> : <LoginScreen />}
+        {/*{isAuthenticated ? <HomeScreen /> : <LoginScreen />}*/}
+        <HomeScreen />
       </SafeAreaView>
     </SafeAreaProvider>
   );

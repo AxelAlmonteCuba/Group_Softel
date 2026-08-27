@@ -5,9 +5,9 @@ import {
   TouchableWithoutFeedback, Keyboard, Alert,
   ActivityIndicator,
 } from 'react-native';
-import ButtonPrimary from '@/components/buttonPrimary';
-import { styles } from '@/theme/styles';
-import PasswordInput from '@/components/passwordInput';
+import ButtonPrimary from '@/components/buttons/ButtonPrimary';
+import PasswordInput from '@/components/inputs/PasswordInput';
+import { stylesComponents, stylesTexts } from '@/theme/styles';
 import { loginSchema } from '@/features/auth/schemas/loginSchema';
 import { authService } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/store/authStore';
@@ -64,15 +64,15 @@ const LoginScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          <View style={styles.formContainer}>
+        <View style={stylesComponents.containerLogin}>
+          <View style={stylesComponents.containerForms}>
             <Image source={require('@assets/images/logo_login.jpg')} style={{ width: 200, height: 200, alignSelf: 'center' }} />
-            <Text style={styles.basicTitle}>Bienvenido</Text>
-            <Text style={styles.subtitle}>Ingrese con las credenciales asignadas por administración</Text>
+            <Text style={stylesTexts.basicTitle}>Bienvenido</Text>
+            <Text style={stylesTexts.subtitle}>Ingrese con las credenciales asignadas por administración</Text>
 
-            <Text style={styles.litleTitle}>Correo o usuario</Text>
+            <Text style={stylesTexts.litleTitle}>Correo o usuario</Text>
             <TextInput
-              style={styles.textInput}
+              style={stylesComponents.textInput}
               placeholder="Ej. admin@softel.com"
               value={correo}
               onChangeText={setCorreo}
@@ -81,7 +81,7 @@ const LoginScreen = () => {
               editable={!isLoading}
             />
 
-            <Text style={styles.litleTitle}>Contraseña</Text>
+            <Text style={stylesTexts.litleTitle}>Contraseña</Text>
             <PasswordInput
               value={clave}
               onChangeText={setClave}
