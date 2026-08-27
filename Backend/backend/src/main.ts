@@ -40,6 +40,7 @@ async function bootstrap() {
   );
 
   const puerto = process.env.PUERTO ?? 3000;
-  await app.listen(puerto);
+  await app.listen(puerto, '0.0.0.0');
+  console.log(`Backend corriendo en: http://0.0.0.0:${puerto}/api/v1`);
 }
 bootstrap();

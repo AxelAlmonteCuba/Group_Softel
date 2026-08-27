@@ -1,4 +1,4 @@
-# Regla 08: Interfaz de Usuario y Sistema de Diseño
+# Regla 10: Interfaz de Usuario y Sistema de Diseño
 
 Centraliza las directivas visuales y de usabilidad para SOFTEL, prohibiendo el uso de estilos ad-hoc.
 

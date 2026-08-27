@@ -1,4 +1,4 @@
-# Regla 06: Stack Tecnológico y Convenciones Frontend
+# Regla 08: Stack Tecnológico y Convenciones Frontend
 
 Este documento define la base tecnológica, los idiomas y los estándares de código para la aplicación móvil y web de SOFTEL (React Native + Expo).
 

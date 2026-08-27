@@ -11,7 +11,7 @@ const UserTopBarr = () => {
       {/* Grupo izquierdo: Imagen y textos */}
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View>
-          <Image source={require('@assets/images/logo_login.jpg')} style={[styles.imageProfile, {}]} />
+          <Image source={require('@assets/images/logo_login.jpg')} style={styles.imageProfile} />
         </View>
         <View style={{ marginLeft: 10 }}>
           <Text style={styles.titleHome}>Hola, Juan Perez</Text>
