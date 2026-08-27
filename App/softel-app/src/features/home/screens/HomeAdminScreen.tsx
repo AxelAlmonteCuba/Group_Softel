@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { colors } from '@/theme';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
@@ -7,7 +8,11 @@ import ButtonSecondary from '@/components/buttons/ButtonSecondary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
 import CardOptions from '@/components/cards/CardOptions';
 
-const HomeAdminScreen = () => {
+interface Props {
+  onNavigate?: (screen: string) => void;
+}
+
+const HomeAdminScreen = ({ onNavigate }: Props) => {
   return (
     <ScrollView style={stylesComponents.containerApp}>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Resumen Administrativo</Text>
@@ -17,7 +22,11 @@ const HomeAdminScreen = () => {
         <CardHome title="Cajas en revisión" value={5} iconName="wallet-outline" />
       </View>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Acciones Rápidas</Text>
-      <ButtonPrimary text="Gestionar Usuarios" onPress={() => { }} iconName='people-outline' />
+      <ButtonPrimary 
+        text="Gestionar Usuarios" 
+        onPress={() => onNavigate && onNavigate('GESTION_USUARIOS')} 
+        iconName='people-outline' 
+      />
       <ButtonSecondary text="Ver Reportes Globales" onPress={() => { }} iconName="stats-chart" />
       <ButtonTertiary text="Revisar Cajas Chicas" onPress={() => { }} iconName="wallet-outline" />
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15, marginTop: 15 }]}>Actividad Reciente</Text>
@@ -26,24 +35,22 @@ const HomeAdminScreen = () => {
         <CardOptions 
           title="Nuevo usuario registrado" 
           subtitle="Hace 2 horas" 
-          iconName="person-add-outline" 
-          iconColor={colors.primary}
-          iconBgColor={colors.errorSoft}
+          type="NUEVO_USUARIO"
         />
         <CardOptions 
           title="Reporte aprobado por supervisor" 
           subtitle="Ayer, 14:30" 
-          iconName="clipboard-outline" 
+          type="REPORTE"
         />
         <CardOptions 
           title="Caja chica rechazada - Falta comprobante" 
           subtitle="Ayer, 10:15" 
-          iconName="warning-outline" 
+          type="RECHAZO"
         />
         <CardOptions 
           title="Configuración de sistema actualizada" 
           subtitle="Hace 2 días" 
-          iconName="settings-outline" 
+          type="CONFIGURACION"
         />
       </View>
     </ScrollView>
