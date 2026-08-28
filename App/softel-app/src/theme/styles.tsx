@@ -49,7 +49,33 @@ export const stylesTexts = StyleSheet.create({
         fontWeight: '500',
         color: colors.textPrimary,
         marginBottom: 2,
-    }
+    },
+    // Estilos de texto para CardProfile
+    cardProfileRole: {
+        fontSize: typography.size.sm,
+        color: colors.textSecondary,
+        marginBottom: 4,
+        lineHeight: typography.size.sm * typography.lineHeight.normal,
+    },
+    cardProfileEmail: {
+        fontSize: typography.size.xs,
+        color: colors.textSecondary,
+    },
+    cardProfilePlaceholderText: {
+        fontSize: typography.size.xxl,
+        fontWeight: typography.weight.bold,
+        color: colors.textSecondary,
+    },
+    badgeText: {
+        fontSize: typography.size.xs,
+        fontWeight: typography.weight.medium,
+    },
+    badgeTextActive: {
+        color: colors.success,
+    },
+    badgeTextInactive: {
+        color: colors.error,
+    },
 });
 
 export const stylesComponents = StyleSheet.create({
@@ -151,5 +177,64 @@ export const stylesComponents = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         paddingRight: 8,
+    },
+    // Estilos de componentes para CardProfile
+    cardProfileContainer: {
+        backgroundColor: colors.surface,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    cardProfileContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cardProfileImageContainer: {
+        marginRight: 16,
+    },
+    cardProfileImage: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: colors.border,
+    },
+    cardProfilePlaceholderImage: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: colors.border,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cardProfileInfoContainer: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    cardProfileRightContainer: {
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        height: 56,
+        marginLeft: 8,
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginBottom: 'auto',
+    },
+    badgeActive: {
+        backgroundColor: colors.successSoft,
+    },
+    badgeInactive: {
+        backgroundColor: colors.errorSoft,
+    },
+    cardProfileChevron: {
+        marginTop: 'auto',
     },
 });

@@ -4,7 +4,7 @@ import HomeAdminScreen from './HomeAdminScreen';
 import HomeOperatorScreen from './HomeOperatorScreen';
 import UserTopBar from '@/components/layout/UserTopBar';
 import { stylesComponents } from '@/theme/styles';
-import GestionUsuariosScreen from '@/features/usuarios/screens/GestionUsusariosScreen';
+import GestionUsuariosScreen from '@/features/users/screens/UserManagementScreen';
 
 const HomeScreen = () => {
   // TODO: Esto vendrá del Store global de Zustand en el futuro
