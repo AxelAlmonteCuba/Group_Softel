@@ -31,15 +31,13 @@ const CardProfile = ({
             disabled={!onPress}
         >
             <View style={stylesComponents.cardProfileContent}>
-                <View style={stylesComponents.cardProfileImageContainer}>
-                    {imageUrl ? (
-                        <Image source={{ uri: imageUrl }} style={stylesComponents.cardProfileImage} />
-                    ) : (
-                        <View style={stylesComponents.cardProfilePlaceholderImage}>
-                            <Text style={stylesTexts.cardProfilePlaceholderText}>{name.charAt(0).toUpperCase()}</Text>
-                        </View>
-                    )}
-                </View>
+                {imageUrl ? (
+                    <Image source={{ uri: imageUrl }} style={stylesComponents.cardProfileAvatar} />
+                ) : (
+                    <View style={stylesComponents.cardProfileAvatar}>
+                        <Text style={stylesTexts.cardProfilePlaceholderText}>{name.charAt(0).toUpperCase()}</Text>
+                    </View>
+                )}
 
                 <View style={stylesComponents.cardProfileInfoContainer}>
                     <Text style={stylesTexts.textCardOptionTitle} numberOfLines={1}>
@@ -69,7 +67,7 @@ const CardProfile = ({
                             {status}
                         </Text>
                     </View>
-                    <Entypo name="chevron-right" size={20} color={colors.textSecondary} style={stylesComponents.cardProfileChevron} />
+                    <Entypo name="chevron-right" size={20} color={colors.textSecondary} />
                 </View>
             </View>
         </TouchableOpacity>

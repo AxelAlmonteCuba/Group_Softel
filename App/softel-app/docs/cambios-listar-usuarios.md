@@ -1,10 +1,6 @@
 # Cambios — Listado dinámico de usuarios desde el backend
 > Fecha: 2026-08-28 | Módulo: Frontend
-eporte Softel - 28 Agosto 🚀
 
-Buenas tardes equipo,
-
-Avance
 ## Archivos Afectados
 | Estado | Archivo |
 | :--- | :--- |

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Image,
+  View, Text, Image,
   KeyboardAvoidingView, Platform,
   TouchableWithoutFeedback, Keyboard, Alert,
   ActivityIndicator,
@@ -12,6 +12,7 @@ import { loginSchema } from '@/features/auth/schemas/loginSchema';
 import { authService } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/store/authStore';
 import { colors } from '@/theme/colors';
+import TextInput from '@/components/inputs/TextInput';
 
 const LoginScreen = () => {
   const [correo, setCorreo] = useState('');
@@ -70,9 +71,8 @@ const LoginScreen = () => {
             <Text style={stylesTexts.basicTitle}>Bienvenido</Text>
             <Text style={stylesTexts.subtitle}>Ingrese con las credenciales asignadas por administración</Text>
 
-            <Text style={stylesTexts.litleTitle}>Correo o usuario</Text>
             <TextInput
-              style={stylesComponents.textInput}
+              label="Correo o usuario"
               placeholder="Ej. admin@softel.com"
               value={correo}
               onChangeText={setCorreo}

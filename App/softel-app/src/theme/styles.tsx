@@ -195,22 +195,14 @@ export const stylesComponents = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    cardProfileImageContainer: {
-        marginRight: 16,
-    },
-    cardProfileImage: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: colors.border,
-    },
-    cardProfilePlaceholderImage: {
+    cardProfileAvatar: {
         width: 56,
         height: 56,
         borderRadius: 28,
         backgroundColor: colors.border,
         justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 16,
     },
     cardProfileInfoContainer: {
         flex: 1,
@@ -233,8 +225,5 @@ export const stylesComponents = StyleSheet.create({
     },
     badgeInactive: {
         backgroundColor: colors.errorSoft,
-    },
-    cardProfileChevron: {
-        marginTop: 'auto',
     },
 });
