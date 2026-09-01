@@ -9,6 +9,7 @@ interface Props {
     onChange: (value: boolean) => void;
     labelActivo?: string;
     labelInactivo?: string;
+    disabled?: boolean;
 }
 
 const ToggleEstado = ({
@@ -17,6 +18,7 @@ const ToggleEstado = ({
     onChange,
     labelActivo = 'Activo',
     labelInactivo = 'Inactivo',
+    disabled = false,
 }: Props) => {
     return (
         <View
@@ -44,6 +46,7 @@ const ToggleEstado = ({
                 }}
                 thumbColor={colors.surface}
                 ios_backgroundColor={colors.border}
+                disabled={disabled}
             />
         </View>
     );

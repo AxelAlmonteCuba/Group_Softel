@@ -51,9 +51,24 @@ const LoginScreen = () => {
       console.log('Data backend:', err.response?.data);
       console.log('-------------------------\n');
 
-      // Manejo de errores del backend
-      const mensajeBackend = err?.response?.data?.mensaje;
-      setError(mensajeBackend ?? `Error: ${err.message}`);
+      // Manejo de errores del backend (Regla 04 - Formato de Respuestas)
+      const dataBackend = err?.response?.data;
+      
+      let errorA_Mostrar = 'Error de conexión con el servidor';
+      if (dataBackend) {
+          // Si hay errores de validación específicos (ej. 400 Bad Request), mostramos el primero
+          if (dataBackend.errores && dataBackend.errores.length > 0) {
+              errorA_Mostrar = dataBackend.errores[0];
+          } 
+          // Si hay un mensaje general (ej. 401 Unauthorized)
+          else if (dataBackend.mensaje) {
+              errorA_Mostrar = dataBackend.mensaje;
+          }
+      } else if (err.message) {
+          errorA_Mostrar = err.message;
+      }
+
+      setError(errorA_Mostrar);
     } finally {
       setIsLoading(false);
     }

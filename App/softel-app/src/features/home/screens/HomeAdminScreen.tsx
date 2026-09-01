@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 import CardHome from '@/components/cards/CardHome';
@@ -8,11 +11,11 @@ import ButtonSecondary from '@/components/buttons/ButtonSecondary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
 import CardOptions from '@/components/cards/CardOptions';
 
-interface Props {
-  onNavigate?: (screen: string) => void;
-}
+type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'Home'>;
 
-const HomeAdminScreen = ({ onNavigate }: Props) => {
+const HomeAdminScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+
   return (
     <ScrollView style={stylesComponents.containerApp}>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Resumen Administrativo</Text>
@@ -24,7 +27,7 @@ const HomeAdminScreen = ({ onNavigate }: Props) => {
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Acciones Rápidas</Text>
       <ButtonPrimary 
         text="Gestionar Usuarios" 
-        onPress={() => onNavigate && onNavigate('GESTION_USUARIOS')} 
+        onPress={() => navigation.navigate('UserManagement')} 
         iconName='people-outline' 
       />
       <ButtonSecondary text="Ver Reportes Globales" onPress={() => { }} iconName="stats-chart" />
@@ -58,7 +61,3 @@ const HomeAdminScreen = ({ onNavigate }: Props) => {
 };
 
 export default HomeAdminScreen;
-
-const styles2 = StyleSheet.create({
-
-})

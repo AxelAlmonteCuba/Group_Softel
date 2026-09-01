@@ -5,7 +5,8 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   correo: z
     .string()
-    .min(1, 'El correo o usuario es obligatorio')
+    .min(1, 'El correo es obligatorio')
+    .email('Debe ingresar un correo válido')
     .max(120, 'Máximo 120 caracteres'),
 
   clave: z

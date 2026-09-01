@@ -20,6 +20,7 @@ interface Props {
     value?: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    disabled?: boolean;
 }
 
 const SelectInput = ({
@@ -28,6 +29,7 @@ const SelectInput = ({
     value,
     onChange,
     placeholder = 'Seleccionar...',
+    disabled = false,
 }: Props) => {
     const [open, setOpen] = useState(false);
 
@@ -56,6 +58,7 @@ const SelectInput = ({
                     open && { borderColor: colors.borderFocus },
                 ]}
                 onPress={toggle}
+                disabled={disabled}
                 activeOpacity={0.8}
             >
                 <Text

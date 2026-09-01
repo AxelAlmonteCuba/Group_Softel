@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
 // URL base del backend según Regla 04
-const BASE_URL = 'http://192.168.1.33:3000/api/v1'; // IP Wi-Fi de la PC donde corre el backend
+const BASE_URL = 'http://192.168.18.42:3000/api/v1'; // IP Wi-Fi de la PC donde corre el backend
 
 export const api = axios.create({
   baseURL: BASE_URL,
