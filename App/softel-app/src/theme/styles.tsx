@@ -23,7 +23,7 @@ export const stylesTexts = StyleSheet.create({
     },
     litleTitle: {
         fontSize: 12,
-        fontWeight: 'semibold',
+        fontWeight: 'bold',
         color: colors.textSecondary,
         textAlign: 'left',
         marginBottom: 9,
@@ -76,6 +76,28 @@ export const stylesTexts = StyleSheet.create({
     badgeTextInactive: {
         color: colors.error,
     },
+    errorText: {
+        color: colors.error,
+        fontSize: typography.size.md,
+        textAlign: 'center',
+        padding: 20,
+    },
+    emptyListText: {
+        color: colors.textSecondary,
+        fontSize: typography.size.md,
+        textAlign: 'center',
+        marginTop: 40,
+    },
+    toggleLabel: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: colors.textPrimary,
+        marginBottom: 2,
+    },
+    toggleValue: {
+        fontSize: 13,
+        color: colors.textSecondary,
+    },
 });
 
 export const stylesComponents = StyleSheet.create({
@@ -93,14 +115,15 @@ export const stylesComponents = StyleSheet.create({
         backgroundColor: colors.background,
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        width: '100%',
     },
     containerApp: {
         flex: 1,
         backgroundColor: colors.background,
         padding: 14,
     },
-    containerForms: {
+    containerLoginForms: {
         backgroundColor: colors.surface,
         borderRadius: 10,
         padding: 15,
@@ -108,11 +131,25 @@ export const stylesComponents = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border
     },
+    containerForms: {
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        padding: 20,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignSelf: 'center',
+    },
     textInput: {
         borderColor: colors.border,
         borderWidth: 1,
         borderRadius: 10,
         marginBottom: 15,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        width: '100%',
+        fontSize: 15,
+        color: colors.textPrimary,
     },
     inputWrapper: {
         position: 'relative',
@@ -126,6 +163,39 @@ export const stylesComponents = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    inputIconActions: {
+        position: 'absolute',
+        right: 10,
+        top: 0,
+        bottom: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    inputIconBtn: {
+        padding: 4,
+    },
+    selectDropdown: {
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 10,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    selectItem: {
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    selectItemLast: {
+        paddingHorizontal: 14,
+        paddingVertical: 13,
+    },
+    selectItemActive: {
+        backgroundColor: colors.primarySoft ?? colors.border,
     },
     topBar: {
         backgroundColor: colors.surface,
@@ -225,5 +295,16 @@ export const stylesComponents = StyleSheet.create({
     },
     badgeInactive: {
         backgroundColor: colors.errorSoft,
+    },
+    searchBarContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 4,
+    },
+    scrollListContent: {
+        padding: 16,
+    },
+    cardListWrapper: {
+        marginBottom: 12,
     },
 });

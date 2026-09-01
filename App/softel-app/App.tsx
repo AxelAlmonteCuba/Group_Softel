@@ -1,17 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AddEditUserScreen from './src/features/users/screens/AddEditUserScreen';
-import { stylesComponents } from './src/theme/styles';
+import { colors } from './src/theme/colors';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style="light" />
-        <View style={stylesComponents.containerLogin}>
-          <AddEditUserScreen />
-        </View>
+        <AddEditUserScreen />
       </SafeAreaView>
     </SafeAreaProvider>
   );

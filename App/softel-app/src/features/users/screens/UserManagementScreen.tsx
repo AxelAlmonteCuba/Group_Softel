@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Text } from 'react-native';
-import CardProfile from '../../../components/cards/CardProfile';
-import SearchBar from '../../../components/bars/SearchBar';
-import { colors } from '../../../theme/colors';
-import { getUsers, User } from '../../../services/userService';
-import { typography } from '../../../theme/typography';
+import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
+import CardProfile from '@/components/cards/CardProfile';
+import SearchBar from '@/components/bars/SearchBar';
+import { colors } from '@/theme/colors';
+import { getUsers, User } from '@/services/userService';
+import { stylesComponents, stylesTexts } from '@/theme/styles';
 
 interface Props {
     onBack?: () => void;
@@ -45,7 +45,7 @@ const UserManagementScreen = ({ onBack }: Props) => {
 
     if (loading) {
         return (
-            <View style={[styles.container, styles.centered]}>
+            <View style={stylesComponents.containerLogin}>
                 <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
@@ -53,29 +53,29 @@ const UserManagementScreen = ({ onBack }: Props) => {
 
     if (error) {
         return (
-            <View style={[styles.container, styles.centered]}>
-                <Text style={styles.errorText}>{error}</Text>
+            <View style={stylesComponents.containerLogin}>
+                <Text style={stylesTexts.errorText}>{error}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.searchContainer}>
+        <View style={stylesComponents.containerApp}>
+            <View style={stylesComponents.searchBarContainer}>
                 <SearchBar 
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Buscar usuario..."
                 />
             </View>
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView contentContainerStyle={stylesComponents.scrollListContent}>
                 {filteredUsers.length === 0 ? (
-                    <Text style={styles.emptyText}>
+                    <Text style={stylesTexts.emptyListText}>
                         {users.length === 0 ? 'No hay usuarios registrados.' : 'No se encontraron resultados.'}
                     </Text>
                 ) : (
                     filteredUsers.map(user => (
-                        <View key={user.id} style={styles.cardWrapper}>
+                        <View key={user.id} style={stylesComponents.cardListWrapper}>
                             <CardProfile 
                                 name={`${user.nombres} ${user.apellidos}`}
                                 role={user.cargo}
@@ -90,39 +90,5 @@ const UserManagementScreen = ({ onBack }: Props) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    searchContainer: {
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 4,
-    },
-    centered: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    content: {
-        padding: 16,
-    },
-    cardWrapper: {
-        marginBottom: 12,
-    },
-    errorText: {
-        color: colors.error,
-        fontSize: typography.size.md,
-        textAlign: 'center',
-        padding: 20,
-    },
-    emptyText: {
-        color: colors.textSecondary,
-        fontSize: typography.size.md,
-        textAlign: 'center',
-        marginTop: 40,
-    }
-});
 
 export default UserManagementScreen;

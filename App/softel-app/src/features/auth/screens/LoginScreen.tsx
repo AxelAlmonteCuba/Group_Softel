@@ -66,7 +66,7 @@ const LoginScreen = () => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={stylesComponents.containerLogin}>
-          <View style={stylesComponents.containerForms}>
+          <View style={stylesComponents.containerLoginForms}>
             <Image source={require('@assets/images/logo_login.jpg')} style={{ width: 200, height: 200, alignSelf: 'center' }} />
             <Text style={stylesTexts.basicTitle}>Bienvenido</Text>
             <Text style={stylesTexts.subtitle}>Ingrese con las credenciales asignadas por administración</Text>
