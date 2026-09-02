@@ -53,19 +53,19 @@ const LoginScreen = () => {
 
       // Manejo de errores del backend (Regla 04 - Formato de Respuestas)
       const dataBackend = err?.response?.data;
-      
+
       let errorA_Mostrar = 'Error de conexión con el servidor';
       if (dataBackend) {
-          // Si hay errores de validación específicos (ej. 400 Bad Request), mostramos el primero
-          if (dataBackend.errores && dataBackend.errores.length > 0) {
-              errorA_Mostrar = dataBackend.errores[0];
-          } 
-          // Si hay un mensaje general (ej. 401 Unauthorized)
-          else if (dataBackend.mensaje) {
-              errorA_Mostrar = dataBackend.mensaje;
-          }
+        // Si hay errores de validación específicos (ej. 400 Bad Request), mostramos el primero
+        if (dataBackend.errores && dataBackend.errores.length > 0) {
+          errorA_Mostrar = dataBackend.errores[0];
+        }
+        // Si hay un mensaje general (ej. 401 Unauthorized)
+        else if (dataBackend.mensaje) {
+          errorA_Mostrar = dataBackend.mensaje;
+        }
       } else if (err.message) {
-          errorA_Mostrar = err.message;
+        errorA_Mostrar = err.message;
       }
 
       setError(errorA_Mostrar);
@@ -82,7 +82,7 @@ const LoginScreen = () => {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={stylesComponents.containerLogin}>
           <View style={stylesComponents.containerLoginForms}>
-            <Image source={require('@assets/images/logo_login.jpg')} style={{ width: 200, height: 200, alignSelf: 'center' }} />
+            <Image source={require('@assets/images/logo_login_final_2.jpg')} style={{ width: 200, height: 200, alignSelf: 'center' }} />
             <Text style={stylesTexts.basicTitle}>Bienvenido</Text>
             <Text style={stylesTexts.subtitle}>Ingrese con las credenciales asignadas por administración</Text>
 
