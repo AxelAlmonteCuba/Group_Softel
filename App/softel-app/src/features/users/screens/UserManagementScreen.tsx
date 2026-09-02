@@ -1,12 +1,12 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { View, ScrollView, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
 import FabButton from '@/components/buttons/FabButton';
 import CardProfile from '@/components/cards/CardProfile';
 import SearchBar from '@/components/bars/SearchBar';
+import FilterChips from '@/components/inputs/FilterChips';
 import { colors } from '@/theme/colors';
 import { getUsers, User } from '@/features/users/services/userService';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
@@ -19,6 +19,14 @@ const UserManagementScreen = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const route = useRoute<RouteProp<MainStackParamList, 'UserManagement'>>();
+    const [filterStatus, setFilterStatus] = useState<string>(route.params?.initialFilter || 'TODOS');
+
+    const filterOptions = [
+        { label: 'Todos', value: 'TODOS' },
+        { label: 'Activos', value: 'ACTIVO' },
+        { label: 'Inactivos', value: 'INACTIVO' },
+    ];
 
     // Recarga la lista cada vez que la pantalla vuelve a estar enfocada
     // (así refleja usuarios recién creados o editados)
@@ -55,15 +63,23 @@ const UserManagementScreen = () => {
     );
 
     const filteredUsers = useMemo(() => {
-        if (!searchQuery.trim()) return users;
-        const query = searchQuery.toLowerCase();
-        return users.filter(user =>
-            user.nombres.toLowerCase().includes(query) ||
-            user.apellidos.toLowerCase().includes(query) ||
-            user.correo.toLowerCase().includes(query) ||
-            user.cargo.toLowerCase().includes(query)
-        );
-    }, [users, searchQuery]);
+        let result = users;
+        
+        if (filterStatus !== 'TODOS') {
+            result = result.filter(user => user.estado === filterStatus);
+        }
+
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(user =>
+                user.nombres.toLowerCase().includes(query) ||
+                user.apellidos.toLowerCase().includes(query) ||
+                user.correo.toLowerCase().includes(query) ||
+                user.cargo.toLowerCase().includes(query)
+            );
+        }
+        return result;
+    }, [users, searchQuery, filterStatus]);
 
     if (loading) {
         return (
@@ -88,6 +104,13 @@ const UserManagementScreen = () => {
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Buscar usuario..."
+                />
+            </View>
+            <View>
+                <FilterChips 
+                    options={filterOptions}
+                    selectedValue={filterStatus}
+                    onSelect={setFilterStatus}
                 />
             </View>
             <ScrollView contentContainerStyle={stylesComponents.scrollListContent}>

@@ -20,7 +20,7 @@ export type AuthStackParamList = {
  */
 export type MainStackParamList = {
     Home: undefined;
-    UserManagement: undefined;
+    UserManagement: { initialFilter?: string } | undefined;
     AddEditUser: {
         mode: 'create' | 'edit' | 'view';
         user?: User;

@@ -1,115 +1,21 @@
 import { StyleSheet } from "react-native";
-import { colors } from "./colors";
-import { typography } from "./typography";
-
-export const stylesTexts = StyleSheet.create({
-    textButtonPrimary: {
-        color: colors.textOnPrimary,
-        fontSize: 16,
-    },
-    basicTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
-        textAlign: 'center',
-        marginBottom: 9,
-    },
-    subtitle: {
-        fontSize: 14,
-        fontWeight: 'regular',
-        color: colors.textSecondary,
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    litleTitle: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: colors.textSecondary,
-        textAlign: 'left',
-        marginBottom: 9,
-    },
-    titleHome: {
-        fontSize: 20,
-        fontWeight: 'semibold',
-        color: colors.textPrimary,
-        textAlign: 'left',
-    },
-    textButtonOptionSec: {
-        fontSize: 16,
-        fontWeight: 'semibold',
-        color: colors.textSecondary,
-    },
-    textButtonOptionTer: {
-        fontSize: 16,
-        fontWeight: 'semibold',
-        color: colors.primary,
-    },
-    textCardOptionTitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: colors.textPrimary,
-        marginBottom: 2,
-    },
-    // Estilos de texto para CardProfile
-    cardProfileRole: {
-        fontSize: typography.size.sm,
-        color: colors.textSecondary,
-        marginBottom: 4,
-        lineHeight: typography.size.sm * typography.lineHeight.normal,
-    },
-    cardProfileEmail: {
-        fontSize: typography.size.xs,
-        color: colors.textSecondary,
-    },
-    cardProfilePlaceholderText: {
-        fontSize: typography.size.xxl,
-        fontWeight: typography.weight.bold,
-        color: colors.textSecondary,
-    },
-    badgeText: {
-        fontSize: typography.size.xs,
-        fontWeight: typography.weight.medium,
-    },
-    badgeTextActive: {
-        color: colors.success,
-    },
-    badgeTextInactive: {
-        color: colors.error,
-    },
-    errorText: {
-        color: colors.error,
-        fontSize: typography.size.md,
-        textAlign: 'center',
-        padding: 20,
-    },
-    emptyListText: {
-        color: colors.textSecondary,
-        fontSize: typography.size.md,
-        textAlign: 'center',
-        marginTop: 40,
-    },
-    toggleLabel: {
-        fontSize: 13,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
-        marginBottom: 2,
-    },
-    toggleValue: {
-        fontSize: 13,
-        color: colors.textSecondary,
-    },
-});
+import { colors } from "../colors";
+import { 
+    baseButton, 
+    baseSurfaceBorder, 
+    baseAbsoluteIcon, 
+    baseSelectItem, 
+    baseShadow 
+} from "./base";
 
 export const stylesComponents = StyleSheet.create({
     buttonPrimary: {
+        ...baseButton,
         backgroundColor: colors.primary,
-        borderRadius: 10,
-        paddingVertical: 13,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 10
+    },
+    buttonSecondary: {
+        ...baseButton,
+        ...baseSurfaceBorder,
     },
     containerLogin: {
         backgroundColor: colors.background,
@@ -124,20 +30,16 @@ export const stylesComponents = StyleSheet.create({
         padding: 14,
     },
     containerLoginForms: {
-        backgroundColor: colors.surface,
+        ...baseSurfaceBorder,
         borderRadius: 10,
         padding: 15,
         width: '90%',
-        borderWidth: 1,
-        borderColor: colors.border
     },
     containerForms: {
-        backgroundColor: colors.surface,
+        ...baseSurfaceBorder,
         borderRadius: 16,
         padding: 20,
         width: '100%',
-        borderWidth: 1,
-        borderColor: colors.border,
         alignSelf: 'center',
     },
     textInput: {
@@ -157,52 +59,40 @@ export const stylesComponents = StyleSheet.create({
         marginBottom: 15,
     },
     iconOjo: {
-        position: 'absolute',
+        ...baseAbsoluteIcon,
         right: 12,
-        top: 0,
-        bottom: 0,
         justifyContent: 'center',
-        alignItems: 'center',
     },
     inputIconActions: {
-        position: 'absolute',
+        ...baseAbsoluteIcon,
         right: 10,
-        top: 0,
-        bottom: 0,
         flexDirection: 'row',
-        alignItems: 'center',
         gap: 8,
     },
     inputIconBtn: {
         padding: 4,
     },
     selectDropdown: {
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
+        ...baseSurfaceBorder,
         borderRadius: 10,
         marginTop: 4,
         overflow: 'hidden',
     },
     selectItem: {
-        paddingHorizontal: 14,
-        paddingVertical: 13,
+        ...baseSelectItem,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
     selectItemLast: {
-        paddingHorizontal: 14,
-        paddingVertical: 13,
+        ...baseSelectItem,
     },
     selectItemActive: {
         backgroundColor: colors.primarySoft ?? colors.border,
     },
     topBar: {
-        backgroundColor: colors.surface,
+        ...baseSurfaceBorder,
         width: '100%',
         height: 90,
-        borderWidth: 1,
-        borderColor: colors.border,
         justifyContent: 'space-between',
         paddingBottom: 5,
         paddingHorizontal: 20,
@@ -214,18 +104,6 @@ export const stylesComponents = StyleSheet.create({
         borderRadius: 25,
         borderWidth: 2,
         borderColor: colors.border,
-    },
-    buttonSecondary: {
-        backgroundColor: colors.surface,
-        borderRadius: 10,
-        paddingVertical: 13,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 10
     },
     cardOptionContainer: {
         flexDirection: 'row',
@@ -248,18 +126,11 @@ export const stylesComponents = StyleSheet.create({
         justifyContent: 'center',
         paddingRight: 8,
     },
-    // Estilos de componentes para CardProfile
     cardProfileContainer: {
-        backgroundColor: colors.surface,
+        ...baseSurfaceBorder,
+        ...baseShadow,
         borderRadius: 12,
         padding: 16,
-        borderWidth: 1,
-        borderColor: colors.border,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
     },
     cardProfileContent: {
         flexDirection: 'row',
@@ -322,5 +193,30 @@ export const stylesComponents = StyleSheet.create({
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
+    },
+    filterChipContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 10,
+        gap: 8,
+    },
+    filterChip: {
+        ...baseSurfaceBorder,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginRight: 8,
+    },
+    filterChipSelected: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    cardHomeContainer: {
+        ...baseSurfaceBorder,
+        flex: 1,
+        height: 108,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 5,
     },
 });

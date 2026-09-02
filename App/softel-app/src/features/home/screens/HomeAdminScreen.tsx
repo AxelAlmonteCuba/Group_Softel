@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme';
@@ -10,17 +10,34 @@ import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import ButtonSecondary from '@/components/buttons/ButtonSecondary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
 import CardOptions from '@/components/cards/CardOptions';
+import { getUsers } from '@/features/users/services/userService';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'Home'>;
 
 const HomeAdminScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUsersCount = async () => {
+        try {
+          const users = await getUsers();
+          const activeCount = users.filter(u => u.estado === 'ACTIVO').length;
+          setActiveUsersCount(activeCount);
+        } catch (error) {
+          console.log('Error fetching active users count', error);
+        }
+      };
+      fetchUsersCount();
+    }, [])
+  );
 
   return (
     <ScrollView style={stylesComponents.containerApp}>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Resumen Administrativo</Text>
       <View style={{ flexDirection: 'row', gap: 12, paddingBottom: 15 }}>
-        <CardHome title="Usuarios Activos" value={45} iconName="people-outline" />
+        <CardHome title="Usuarios Activos" value={activeUsersCount} iconName="people-outline" onPress={() => navigation.navigate('UserManagement', { initialFilter: 'ACTIVO' })} />
         <CardHome title="Reportes en borrador" value={10} iconName="document-text-outline" />
         <CardHome title="Cajas en revisión" value={5} iconName="wallet-outline" />
       </View>
