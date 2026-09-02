@@ -1,4 +1,4 @@
-import { User } from '@/services/userService';
+import { User } from '@/features/users/services/userService';
 
 /**
  * Parámetros del Stack de Autenticación.

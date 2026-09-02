@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,8 +12,8 @@ import ToggleEstado from '@/components/inputs/ToggleEstado';
 import { stylesComponents } from '@/theme/styles';
 import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
-import { createUser, updateUser } from '@/services/userService';
-import type { CreateUser, UpdateUser } from '@/services/userService';
+import { createUser, updateUser } from '@/features/users/services/userService';
+import type { CreateUser, UpdateUser } from '@/features/users/services/userService';
 
 const ROL_OPTIONS: SelectOption[] = [
     { label: 'Administrador', value: 'ADMINISTRADOR' },
@@ -88,7 +88,11 @@ const AddEditUserScreen = () => {
     };
 
     return (
-        <View style={stylesComponents.containerApp}>
+        <KeyboardAvoidingView
+            style={stylesComponents.containerApp}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={{ paddingBottom: 16 }}
@@ -165,6 +169,13 @@ const AddEditUserScreen = () => {
                         </>
                     )}
 
+                    <TextInput
+                        label="Cargo"
+                        placeholder="Ej. Jefe de Cuadrilla"
+                        value={cargo}
+                        onChangeText={setCargo}
+                        editable={mode != "view"}
+                    />
 
                     <SelectInput
                         label="Rol del Sistema"
@@ -175,19 +186,14 @@ const AddEditUserScreen = () => {
                         disabled={mode === "view"}
                     />
 
-                    <TextInput
-                        label="Cargo"
-                        placeholder="Ej. Jefe de Cuadrilla"
-                        value={cargo}
-                        onChangeText={setCargo}
-                        editable={mode != "view"}
-                    />
 
-                    <ToggleEstado
-                        value={estado === 'ACTIVO'}
-                        onChange={(value: boolean) => setEstado(value ? 'ACTIVO' : 'INACTIVO')}
-                        disabled={mode === "view"}
-                    />
+                    {mode !== 'create' && (
+                        <ToggleEstado
+                            value={estado === 'ACTIVO'}
+                            onChange={(value: boolean) => setEstado(value ? 'ACTIVO' : 'INACTIVO')}
+                            disabled={mode === "view"}
+                        />
+                    )}
 
                 </View>
             </ScrollView>
@@ -199,7 +205,7 @@ const AddEditUserScreen = () => {
                     />
                 )}
             </View>
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 

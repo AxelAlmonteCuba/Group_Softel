@@ -4,11 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
-import { Ionicons } from '@expo/vector-icons';
+import FabButton from '@/components/buttons/FabButton';
 import CardProfile from '@/components/cards/CardProfile';
 import SearchBar from '@/components/bars/SearchBar';
 import { colors } from '@/theme/colors';
-import { getUsers, User } from '@/services/userService';
+import { getUsers, User } from '@/features/users/services/userService';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'UserManagement'>;
@@ -57,7 +57,7 @@ const UserManagementScreen = () => {
     const filteredUsers = useMemo(() => {
         if (!searchQuery.trim()) return users;
         const query = searchQuery.toLowerCase();
-        return users.filter(user => 
+        return users.filter(user =>
             user.nombres.toLowerCase().includes(query) ||
             user.apellidos.toLowerCase().includes(query) ||
             user.correo.toLowerCase().includes(query) ||
@@ -84,7 +84,7 @@ const UserManagementScreen = () => {
     return (
         <View style={stylesComponents.containerApp}>
             <View style={stylesComponents.searchBarContainer}>
-                <SearchBar 
+                <SearchBar
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Buscar usuario..."
@@ -98,7 +98,7 @@ const UserManagementScreen = () => {
                 ) : (
                     filteredUsers.map(user => (
                         <View key={user.id} style={stylesComponents.cardListWrapper}>
-                            <CardProfile 
+                            <CardProfile
                                 name={`${user.nombres} ${user.apellidos}`}
                                 role={user.cargo}
                                 email={user.correo}
@@ -110,35 +110,9 @@ const UserManagementScreen = () => {
                 )}
             </ScrollView>
 
-            {/* FAB — Crear nuevo usuario */}
-            <TouchableOpacity
-                style={styles.fab}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('AddEditUser', { mode: 'create' })}
-            >
-                <Ionicons name="add" size={28} color={colors.textOnPrimary} />
-            </TouchableOpacity>
+            <FabButton onPress={() => navigation.navigate('AddEditUser', { mode: 'create' })} />
         </View>
     );
 };
 
 export default UserManagementScreen;
-
-const styles = StyleSheet.create({
-    fab: {
-        position: 'absolute',
-        bottom: 24,
-        right: 24,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-        elevation: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-    },
-});
