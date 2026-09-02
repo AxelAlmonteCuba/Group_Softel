@@ -2,6 +2,7 @@ import { api } from './api';
 
 export interface User {
   id: string;
+  documento_identidad: string;
   nombres: string;
   apellidos: string;
   correo: string;

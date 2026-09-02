@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import HomeAdminScreen from './HomeAdminScreen';
 import HomeOperatorScreen from './HomeOperatorScreen';
 import UserTopBar from '@/components/layout/UserTopBar';
@@ -11,14 +12,14 @@ const HomeScreen = () => {
   const userRole = usuario?.rol ?? 'TRABAJADOR';
 
   return (
-    <View style={{ flex: 1, backgroundColor: stylesComponents.containerLogin.backgroundColor }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: stylesComponents.containerLogin.backgroundColor }}>
       <UserTopBar />
       {userRole === 'ADMINISTRADOR' ? (
         <HomeAdminScreen />
       ) : (
         <HomeOperatorScreen />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

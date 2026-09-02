@@ -73,7 +73,6 @@ export class UsersService {
    */
   getUsers(): Promise<User[]> {
     return this.userRepository.find({
-      where: { estado: 'ACTIVO' },
       select: {
         id: true,
         documento_identidad: true,

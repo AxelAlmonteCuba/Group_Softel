@@ -12,7 +12,8 @@ import ToggleEstado from '@/components/inputs/ToggleEstado';
 import { stylesComponents } from '@/theme/styles';
 import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
-import { createUser, CreateUser, updateUser, UpdateUser } from '@/services/userService';
+import { createUser, updateUser } from '@/services/userService';
+import type { CreateUser, UpdateUser } from '@/services/userService';
 
 const ROL_OPTIONS: SelectOption[] = [
     { label: 'Administrador', value: 'ADMINISTRADOR' },
@@ -32,7 +33,7 @@ const AddEditUserScreen = () => {
 
     const [nombres, setNombres] = useState(user?.nombres ?? '');
     const [apellidos, setApellidos] = useState(user?.apellidos ?? '');
-    const [documentoIdentidad, setDocumentoIdentidad] = useState('');
+    const [documentoIdentidad, setDocumentoIdentidad] = useState(user?.documento_identidad ?? '');
     const [correo, setCorreo] = useState(user?.correo ?? '');
     const [clave, setClave] = useState('');
     const [rol, setRol] = useState(user?.rol ?? 'TRABAJADOR');
