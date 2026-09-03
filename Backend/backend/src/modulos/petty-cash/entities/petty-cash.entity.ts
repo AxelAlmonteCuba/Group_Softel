@@ -21,11 +21,11 @@ export class PettyCash {
   managerUserId!: string;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'usuario_aprobador_id' })
-  approverUser!: User | null;
+  @JoinColumn({ name: 'usuario_evaluador_id' })
+  evaluatorUser!: User | null;
 
-  @Column({ name: 'usuario_aprobador_id', nullable: true })
-  approverUserId!: string | null;
+  @Column({ name: 'usuario_evaluador_id', nullable: true })
+  evaluatorUserId!: string | null;
 
   @Column({ name: 'monto_asignado', type: 'decimal', precision: 10, scale: 2 })
   assignedAmount!: number;

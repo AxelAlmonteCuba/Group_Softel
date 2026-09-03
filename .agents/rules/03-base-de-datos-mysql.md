@@ -72,7 +72,7 @@ Control de fondos operativos asignados a un responsable.
 | :--- | :--- | :--- | :--- |
 | `id` | `CHAR(36)` | **PK**, NOT NULL | UUID de la caja chica |
 | `usuario_encargado_id` | `CHAR(36)` | **FK**, NOT NULL | Responsable que custodia y rinde el fondo (`ON DELETE RESTRICT`) |
-| `usuario_aprobador_id` | `CHAR(36)` | **FK**, NULL | Usuario que aprueba la apertura (`ON DELETE SET NULL`) |
+| `usuario_evaluador_id` | `CHAR(36)` | **FK**, NULL | Usuario que evalúa la apertura (`ON DELETE SET NULL`) |
 | `monto_asignado` | `DECIMAL(10,2)` | NOT NULL | Fondo base otorgado |
 | `saldo_actual` | `DECIMAL(10,2)` | NOT NULL | Saldo disponible durante la operación |
 | `saldo_final` | `DECIMAL(10,2)` | DEFAULT `0.00` | Resultado final de liquidación o cierre |
@@ -95,9 +95,9 @@ Registro y comprobante individual de gasto asociado a una caja.
 | `monto` | `DECIMAL(10,2)` | NOT NULL | Importe del gasto (> 0) |
 | `motivo` | `VARCHAR(255)` | NOT NULL | Justificación o concepto del gasto |
 | `url_comprobante` | `TEXT` | NOT NULL | Ruta relativa del comprobante procesado en WebP |
-| `estado` | `ENUM` | DEFAULT `'PENDIENTE'` | `PENDIENTE`, `APROBADO`, `RECHAZADO` |
-| `motivo_rechazo` | `VARCHAR(255)` | NULL | Justificación obligatoria si el gasto es rechazado |
-| `usuario_aprobador_id` | `CHAR(36)` | **FK**, NULL | Usuario Administrador que evaluó el gasto |
+| `estado` | `ENUM` | DEFAULT `'PENDIENTE'` | `PENDIENTE`, `APROBADO`, `RECHAZADO`, `OBSERVADO` |
+| `comentarios_auditoria` | `VARCHAR(255)` | NULL | Justificación obligatoria si el gasto es rechazado u observado |
+| `usuario_evaluador_id` | `CHAR(36)` | **FK**, NULL | Usuario Administrador que evaluó el gasto |
 | `fecha_gasto` | `DATE` | NOT NULL | Fecha del comprobante o emisión del gasto |
 | `creado_en` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | Fecha de carga al sistema |
 

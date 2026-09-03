@@ -19,7 +19,7 @@ export class Expense {
   @JoinColumn({ name: 'caja_chica_id' })
   pettyCash!: PettyCash | null;
 
-  @Column({ name: 'caja_chica_id', nullable: true })
+  @Column({ name: 'caja_chica_id', type: 'varchar', length: 36, nullable: true })
   pettyCashId!: string | null;
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
@@ -37,11 +37,11 @@ export class Expense {
   categoryId!: number;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'usuario_aprobador_id' })
-  approverUser!: User | null;
+  @JoinColumn({ name: 'usuario_evaluador_id' })
+  evaluatorUser!: User | null;
 
-  @Column({ name: 'usuario_aprobador_id', nullable: true })
-  approverUserId!: string | null;
+  @Column({ name: 'usuario_evaluador_id', type: 'varchar', length: 36, nullable: true })
+  evaluatorUserId!: string | null;
 
   @Column({ name: 'monto', type: 'decimal', precision: 10, scale: 2 })
   amount!: number;
@@ -55,13 +55,13 @@ export class Expense {
   @Column({
     name: 'estado',
     type: 'enum',
-    enum: ['PENDIENTE', 'APROBADO', 'RECHAZADO'],
+    enum: ['PENDIENTE', 'APROBADO', 'RECHAZADO', 'OBSERVADO'],
     default: 'PENDIENTE',
   })
   status!: string;
 
-  @Column({ name: 'motivo_rechazo', length: 255, nullable: true })
-  rejectionReason!: string | null;
+  @Column({ name: 'comentarios_auditoria', type: 'varchar', length: 255, nullable: true })
+  evaluationComment!: string | null;
 
   @Column({ name: 'fecha_gasto', type: 'date' })
   expenseDate!: Date;

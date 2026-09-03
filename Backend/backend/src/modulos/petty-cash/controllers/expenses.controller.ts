@@ -1,7 +1,90 @@
-import { Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpensesService } from '../services/expenses.service';
+import { StorageService } from '../../storage/storage.service';
+import { CreateExpenseDto } from '../dtos/create-expense.dto';
+import { EvaluateExpenseDto } from '../dtos/evaluate-expense.dto';
+import { UpdateExpenseDto } from '../dtos/update-expense.dto';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { GetUser } from '../../../common/decorators/get-user.decorator';
 
 @Controller('gastos')
 export class ExpensesController {
-  constructor(private readonly expensesService: ExpensesService) {}
+  constructor(
+    private readonly expensesService: ExpensesService,
+    private readonly storageService: StorageService,
+  ) {}
+
+  @Post()
+  @Roles('SUPERVISOR', 'TRABAJADOR')
+  @UseInterceptors(FileInterceptor('receipt'))
+  async registerExpense(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: CreateExpenseDto,
+    @GetUser('id') userId: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('El comprobante (imagen) es obligatorio.');
+    }
+
+    // 1. Delegar el guardado y compresión a WebP al StorageService
+    const storageResult = await this.storageService.processAndSaveImage(
+      file.buffer,
+      'gastos',
+    );
+
+    // 2. Registrar el gasto en la Base de Datos usando la ruta relativa devuelta
+    return await this.expensesService.registerExpense(
+      dto,
+      userId,
+      storageResult.relativePath,
+    );
+  }
+
+  @Patch(':id/evaluar')
+  @Roles('ADMINISTRADOR')
+  async evaluateExpense(
+    @Param('id') expenseId: string,
+    @Body() dto: EvaluateExpenseDto,
+    @GetUser('id') adminUserId: string,
+  ) {
+    return await this.expensesService.evaluateExpense(expenseId, dto, adminUserId);
+  }
+
+  @Patch(':id')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
+  @UseInterceptors(FileInterceptor('receipt'))
+  async updateExpense(
+    @Param('id') expenseId: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() dto: UpdateExpenseDto,
+    @GetUser('id') userId: string,
+  ) {
+    let relativePath: string | undefined;
+
+    // Si se subió un nuevo comprobante, procesarlo
+    if (file) {
+      const storageResult = await this.storageService.processAndSaveImage(
+        file.buffer,
+        'gastos',
+      );
+      relativePath = storageResult.relativePath;
+    }
+
+    return await this.expensesService.updateExpense(
+      expenseId,
+      dto,
+      userId,
+      relativePath,
+    );
+  }
 }

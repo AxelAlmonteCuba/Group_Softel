@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PettyCash } from '../entities/petty-cash.entity';
+import { CreatePettyCashDto } from '../dtos/create-petty-cash.dto';
 
 @Injectable()
 export class PettyCashService {
@@ -14,7 +15,7 @@ export class PettyCashService {
   /**
    * Crea una caja chica en estado SOLICITADA. (Fase 2.2 - A)
    */
-  async requestPettyCash(managerUserId: string, assignedAmount: number): Promise<PettyCash> {
+  async requestPettyCash(dto: CreatePettyCashDto, managerUserId: string): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -36,8 +37,8 @@ export class PettyCashService {
 
       const newPettyCash = queryRunner.manager.create(PettyCash, {
         managerUserId: managerUserId,
-        assignedAmount: assignedAmount,
-        currentBalance: assignedAmount, // El saldo inicial es igual al monto asignado
+        assignedAmount: dto.assignedAmount,
+        currentBalance: dto.assignedAmount,
         finalBalance: 0.0,
         status: 'SOLICITADA',
       });
@@ -56,7 +57,7 @@ export class PettyCashService {
   /**
    * Transaccional: Pasa la caja de SOLICITADA a APROBADA y registra al aprobador.
    */
-  async approvePettyCash(pettyCashId: string, approverUserId: string): Promise<PettyCash> {
+  async approvePettyCash(pettyCashId: string, evaluatorUserId: string): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -73,7 +74,7 @@ export class PettyCashService {
       }
 
       pettyCash.status = 'APROBADA';
-      pettyCash.approverUserId = approverUserId;
+      pettyCash.evaluatorUserId = evaluatorUserId;
 
       const savedPettyCash = await queryRunner.manager.save(pettyCash);
       
@@ -90,7 +91,7 @@ export class PettyCashService {
   /**
    * Pasa la caja de SOLICITADA a RECHAZADA.
    */
-  async rejectPettyCash(pettyCashId: string, approverUserId: string): Promise<PettyCash> {
+  async rejectPettyCash(pettyCashId: string, evaluatorUserId: string): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -107,7 +108,7 @@ export class PettyCashService {
       }
 
       pettyCash.status = 'RECHAZADA';
-      pettyCash.approverUserId = approverUserId;
+      pettyCash.evaluatorUserId = evaluatorUserId;
 
       const rejected = await queryRunner.manager.save(pettyCash);
       await queryRunner.commitTransaction();

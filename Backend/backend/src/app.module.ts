@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './modulos/users/users.module';
 import { AuthModule } from './modulos/auth/auth.module';
 import { PettyCashModule } from './modulos/petty-cash/petty-cash.module';
+import { StorageModule } from './modulos/storage/storage.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -38,6 +39,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     UsersModule,
     AuthModule,
     PettyCashModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [
