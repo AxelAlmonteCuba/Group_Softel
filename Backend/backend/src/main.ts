@@ -1,6 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
@@ -28,6 +28,9 @@ async function bootstrap() {
   // Filtro global de excepciones — normaliza TODOS los errores al formato
   // { exito, codigo_estado, mensaje, errores, fecha_hora }
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Interceptor global de serialización — aplica @Exclude() para nunca exponer campos sensibles como clave_hash
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // ValidationPipe global — valida y transforma DTOs en todos los endpoints
   app.useGlobalPipes(

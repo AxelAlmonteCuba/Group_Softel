@@ -66,6 +66,9 @@ export class Expense {
   @Column({ name: 'fecha_gasto', type: 'date' })
   expenseDate!: Date;
 
+  @Column({ name: 'reembolsado', type: 'boolean', default: false })
+  isReimbursed!: boolean;
+
   @CreateDateColumn({ name: 'creado_en', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
 }

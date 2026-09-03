@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, IsNull } from 'typeorm';
 import { Expense } from '../entities/expense.entity';
 import { PettyCash } from '../entities/petty-cash.entity';
 import { CreateExpenseDto } from '../dtos/create-expense.dto';
@@ -19,7 +19,7 @@ export class ExpensesService {
     @InjectRepository(PettyCash)
     private readonly pettyCashRepository: Repository<PettyCash>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   /**
    * Registra un gasto en estado PENDIENTE vinculado a una caja chica ABIERTA.
@@ -164,10 +164,10 @@ export class ExpensesService {
   }
 
   /**
-   * Obtiene todos los gastos de una caja chica específica.
+   * Obtiene todos los gastos de una caja chica específica formateados limpiamente.
    */
-  async getExpensesByPettyCash(pettyCashId: string): Promise<Expense[]> {
-    return await this.expenseRepository.find({
+  async getExpensesByPettyCash(pettyCashId: string): Promise<any[]> {
+    const expenses = await this.expenseRepository.find({
       where: { pettyCashId },
       relations: {
         category: true,
@@ -176,14 +176,50 @@ export class ExpensesService {
       },
       order: { createdAt: 'DESC' },
     });
+
+    return expenses.map((expense) => ({
+      id: expense.id,
+      amount: expense.amount,
+      reason: expense.reason,
+      receiptUrl: expense.receiptUrl,
+      status: expense.status,
+      evaluationComment: expense.evaluationComment,
+      expenseDate: expense.expenseDate,
+      createdAt: expense.createdAt,
+      category: {
+        id: expense.category.id,
+        name: expense.category.name,
+      },
+      expenseUser: {
+        id: expense.expenseUser.id,
+        nombres: expense.expenseUser.nombres,
+        apellidos: expense.expenseUser.apellidos,
+        documento_identidad: expense.expenseUser.documento_identidad,
+        rol: expense.expenseUser.rol,
+        cargo: expense.expenseUser.cargo,
+      },
+      evaluatorUser: expense.evaluatorUser
+        ? {
+          id: expense.evaluatorUser.id,
+          nombres: expense.evaluatorUser.nombres,
+          apellidos: expense.evaluatorUser.apellidos,
+        }
+        : null,
+    }));
   }
 
   /**
    * Obtiene todos los gastos pendientes de revisión (para el Administrador).
+   * Solo devuelve gastos directos o gastos asociados a cajas en estado ABIERTA o EN_REVISION.
+   * Retorna únicamente los datos necesarios para el frontend.
    */
-  async getPendingExpenses(): Promise<Expense[]> {
-    return await this.expenseRepository.find({
-      where: { status: 'PENDIENTE' },
+  async getPendingExpenses(): Promise<any[]> {
+    const expenses = await this.expenseRepository.find({
+      where: [
+        { status: 'PENDIENTE', pettyCashId: IsNull() },
+        { status: 'PENDIENTE', pettyCash: { status: 'ABIERTA' } },
+        { status: 'PENDIENTE', pettyCash: { status: 'EN_REVISION' } },
+      ],
       relations: {
         category: true,
         expenseUser: true,
@@ -191,6 +227,36 @@ export class ExpensesService {
       },
       order: { createdAt: 'ASC' },
     });
+
+    return expenses.map((expense) => ({
+      id: expense.id,
+      amount: expense.amount,
+      reason: expense.reason,
+      receiptUrl: expense.receiptUrl,
+      status: expense.status,
+      expenseDate: expense.expenseDate,
+      createdAt: expense.createdAt,
+      category: {
+        id: expense.category.id,
+        name: expense.category.name,
+      },
+      expenseUser: {
+        id: expense.expenseUser.id,
+        nombres: expense.expenseUser.nombres,
+        apellidos: expense.expenseUser.apellidos,
+        documento_identidad: expense.expenseUser.documento_identidad,
+        rol: expense.expenseUser.rol,
+        cargo: expense.expenseUser.cargo,
+      },
+      pettyCash: expense.pettyCash
+        ? {
+          id: expense.pettyCash.id,
+          assignedAmount: expense.pettyCash.assignedAmount,
+          currentBalance: expense.pettyCash.currentBalance,
+          status: expense.pettyCash.status,
+        }
+        : null,
+    }));
   }
 
   /**
@@ -233,6 +299,98 @@ export class ExpensesService {
     expense.evaluationComment = null;
     expense.evaluatorUserId = null; // Se limpia el evaluador previo
 
+    return await this.expenseRepository.save(expense);
+  }
+
+  /**
+   * Obtiene todos los reembolsos directos (sin caja chica) aprobados y no pagados de un usuario.
+   */
+  async getPendingDirectReimbursementsByUser(userId: string): Promise<{ expenses: any[], totalOwed: number }> {
+    const expenses = await this.expenseRepository.find({
+      where: {
+        expenseUserId: userId,
+        pettyCashId: IsNull(),
+        status: 'APROBADO',
+        isReimbursed: false,
+      },
+      relations: {
+        category: true,
+      },
+      order: { expenseDate: 'ASC' },
+    });
+
+    const totalOwed = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+
+    const cleanExpenses = expenses.map((exp) => ({
+      id: exp.id,
+      amount: exp.amount,
+      reason: exp.reason,
+      receiptUrl: exp.receiptUrl,
+      status: exp.status,
+      expenseDate: exp.expenseDate,
+      category: {
+        id: exp.category.id,
+        name: exp.category.name,
+      },
+    }));
+
+    return { expenses: cleanExpenses, totalOwed };
+  }
+
+  /**
+   * Obtiene un resumen de todos los usuarios que tienen reembolsos directos pendientes.
+   */
+  async getUsersWithPendingReimbursements(): Promise<any[]> {
+    const qb = this.expenseRepository.createQueryBuilder('expense')
+      .innerJoin('expense.expenseUser', 'user')
+      .select([
+        'user.id AS userId',
+        'user.nombres AS nombres',
+        'user.apellidos AS apellidos',
+        'user.documento_identidad AS documento',
+        'COALESCE(SUM(expense.monto), 0) AS totalOwed'
+      ])
+      .where('expense.caja_chica_id IS NULL')
+      .andWhere("expense.estado = 'APROBADO'")
+      .andWhere('expense.reembolsado = false')
+      .groupBy('user.id')
+      .addGroupBy('user.nombres')
+      .addGroupBy('user.apellidos')
+      .addGroupBy('user.documento_identidad');
+
+    const rawResults = await qb.getRawMany();
+
+    return rawResults.map(row => ({
+      userId: row.userId,
+      userNames: `${row.nombres} ${row.apellidos}`,
+      document: row.documento,
+      totalOwed: parseFloat(row.totalOwed)
+    }));
+  }
+
+  /**
+   * Marca un gasto directo como reembolsado (pagado).
+   */
+  async markAsReimbursed(expenseId: string): Promise<Expense> {
+    const expense = await this.expenseRepository.findOne({ where: { id: expenseId } });
+
+    if (!expense) {
+      throw new NotFoundException('Gasto no encontrado.');
+    }
+
+    if (expense.pettyCashId !== null) {
+      throw new BadRequestException('Solo los reembolsos directos (sin caja chica) pueden ser marcados como pagados manualmente.');
+    }
+
+    if (expense.status !== 'APROBADO') {
+      throw new BadRequestException('El gasto debe estar APROBADO para poder ser reembolsado.');
+    }
+
+    if (expense.isReimbursed) {
+      throw new BadRequestException('El gasto ya ha sido marcado como reembolsado.');
+    }
+
+    expense.isReimbursed = true;
     return await this.expenseRepository.save(expense);
   }
 }

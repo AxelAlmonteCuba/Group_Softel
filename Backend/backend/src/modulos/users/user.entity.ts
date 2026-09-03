@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('usuarios')
 export class User {
@@ -23,7 +24,8 @@ export class User {
   @Column({ length: 120, unique: true })
   correo!: string;
 
-  @Column({ length: 255 })
+  @Exclude()
+  @Column({ length: 255, select: false })
   clave_hash!: string;
 
   @Column({ length: 100 })

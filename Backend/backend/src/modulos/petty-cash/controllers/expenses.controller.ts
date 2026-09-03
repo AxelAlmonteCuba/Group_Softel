@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Patch,
   Post,
@@ -86,5 +87,35 @@ export class ExpensesController {
       userId,
       relativePath,
     );
+  }
+
+  @Get('caja/:cajaId')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR')
+  async getExpensesByPettyCash(@Param('cajaId') cajaId: string) {
+    return await this.expensesService.getExpensesByPettyCash(cajaId);
+  }
+
+  @Get('pendientes')
+  @Roles('ADMINISTRADOR')
+  async getPendingExpenses() {
+    return await this.expensesService.getPendingExpenses();
+  }
+
+  @Get('reembolsos-directos/usuarios-con-deuda')
+  @Roles('ADMINISTRADOR', 'CONTADOR')
+  async getUsersWithPendingReimbursements() {
+    return await this.expensesService.getUsersWithPendingReimbursements();
+  }
+
+  @Get('reembolsos-directos/pendientes/:usuarioId')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
+  async getPendingDirectReimbursements(@Param('usuarioId') usuarioId: string) {
+    return await this.expensesService.getPendingDirectReimbursementsByUser(usuarioId);
+  }
+
+  @Patch(':id/reembolsar')
+  @Roles('ADMINISTRADOR', 'CONTADOR')
+  async markAsReimbursed(@Param('id') expenseId: string) {
+    return await this.expensesService.markAsReimbursed(expenseId);
   }
 }

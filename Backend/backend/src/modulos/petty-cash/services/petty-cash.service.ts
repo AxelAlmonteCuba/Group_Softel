@@ -10,7 +10,7 @@ export class PettyCashService {
     @InjectRepository(PettyCash)
     private readonly pettyCashRepository: Repository<PettyCash>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   /**
    * Crea una caja chica en estado SOLICITADA. (Fase 2.2 - A)
@@ -77,7 +77,7 @@ export class PettyCashService {
       pettyCash.evaluatorUserId = evaluatorUserId;
 
       const savedPettyCash = await queryRunner.manager.save(pettyCash);
-      
+
       await queryRunner.commitTransaction();
       return savedPettyCash;
     } catch (error) {
@@ -212,12 +212,12 @@ export class PettyCashService {
       // Aplicar reglas matemáticas (con variables TS)
       pettyCash.currentBalance = Number(pettyCash.assignedAmount) - totalApproved;
       pettyCash.finalBalance = totalApproved - Number(pettyCash.assignedAmount);
-      
+
       pettyCash.status = 'LIQUIDADA';
       pettyCash.closingDate = new Date();
 
       const liquidatedPettyCash = await queryRunner.manager.save(pettyCash);
-      
+
       await queryRunner.commitTransaction();
       return liquidatedPettyCash;
     } catch (error) {
@@ -226,5 +226,45 @@ export class PettyCashService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  /**
+   * Obtiene todas las cajas chicas (Para Administrador y Contador).
+   */
+  async findAll(): Promise<any[]> {
+    const list = await this.pettyCashRepository.find({
+      relations: {
+        managerUser: true,
+        evaluatorUser: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    return list.map((pc) => ({
+      id: pc.id,
+      assignedAmount: pc.assignedAmount,
+      currentBalance: pc.currentBalance,
+      finalBalance: pc.finalBalance,
+      status: pc.status,
+      openingDate: pc.openingDate,
+      closingDate: pc.closingDate,
+      createdAt: pc.createdAt,
+      managerUser: {
+        id: pc.managerUser.id,
+        nombres: pc.managerUser.nombres,
+        apellidos: pc.managerUser.apellidos,
+        documento_identidad: pc.managerUser.documento_identidad,
+        cargo: pc.managerUser.cargo,
+        rol: pc.managerUser.rol,
+      },
+      evaluatorUser: pc.evaluatorUser
+        ? {
+          id: pc.evaluatorUser.id,
+          nombres: pc.evaluatorUser.nombres,
+          apellidos: pc.evaluatorUser.apellidos,
+          cargo: pc.evaluatorUser.cargo,
+        }
+        : null,
+    }));
   }
 }

@@ -8,7 +8,7 @@ import { ForbiddenException } from '@nestjs/common';
 
 @Controller('cajas-chicas')
 export class PettyCashController {
-  constructor(private readonly pettyCashService: PettyCashService) {}
+  constructor(private readonly pettyCashService: PettyCashService) { }
 
   @Post()
   @Roles('SUPERVISOR')
@@ -31,7 +31,7 @@ export class PettyCashController {
       case PettyCashAction.APPROVE:
         if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede aprobar.');
         return await this.pettyCashService.approvePettyCash(id, userId);
-      
+
       case PettyCashAction.REJECT:
         if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede rechazar.');
         return await this.pettyCashService.rejectPettyCash(id, userId);
@@ -53,7 +53,7 @@ export class PettyCashController {
       case PettyCashAction.LIQUIDATE:
         if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede liquidar.');
         return await this.pettyCashService.liquidatePettyCash(id);
-        
+
       default:
         throw new ForbiddenException('Acción no soportada.');
     }
@@ -62,8 +62,6 @@ export class PettyCashController {
   @Get()
   @Roles('ADMINISTRADOR', 'CONTADOR')
   async getAllPettyCash() {
-    // Para administradores, ver todo (debería implementarse en el servicio)
-    // return this.pettyCashService.findAll();
-    return { message: 'Ruta para obtener todas las cajas (Admin/Contador)' };
+    return await this.pettyCashService.findAll();
   }
 }
