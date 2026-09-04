@@ -83,4 +83,20 @@ export class AuthService {
       usuario: usuarioSinClave as Omit<User, 'clave_hash'>,
     };
   }
+
+  /**
+   * Cierra la sesión del usuario.
+   *
+   * En una arquitectura JWT stateless, la destrucción principal del token
+   * reside en el cliente (App Móvil / Web). El backend valida la sesión activa
+   * y responde confirmando el cierre.
+   *
+   * @param usuarioId Identificador (UUID) del usuario autenticado
+   */
+  async logout(usuarioId: string): Promise<{ exito: boolean; mensaje: string }> {
+    return {
+      exito: true,
+      mensaje: 'Sesión cerrada exitosamente',
+    };
+  }
 }

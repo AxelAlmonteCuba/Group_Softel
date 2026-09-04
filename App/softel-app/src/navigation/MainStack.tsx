@@ -4,6 +4,7 @@ import { MainStackParamList } from './types';
 import HomeScreen from '@/features/home/screens/HomeScreen';
 import UserManagementScreen from '@/features/users/screens/UserManagementScreen';
 import AddEditUserScreen from '@/features/users/screens/AddEditUserScreen';
+import PettyCashScreen from '@/features/petty-cash/screens/PettyCashScreen';
 import { colors } from '@/theme/colors';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -55,6 +56,13 @@ const MainStack = () => {
                     };
                     return { title: titles[mode] ?? 'Usuario' };
                 }}
+            />
+
+            {/* PettyCash: Router de Caja Chica (header oculto para usar su propio header estándar) */}
+            <Stack.Screen
+                name="PettyCash"
+                component={PettyCashScreen}
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     );

@@ -111,4 +111,9 @@ export const stylesTexts = StyleSheet.create({
         marginBottom: 2,
         ...baseTextCenter,
     },
+    textButtonLogout: {
+        fontSize: 16,
+        fontWeight: typography.weight.medium,
+        color: colors.primary,
+    },
 });

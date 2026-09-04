@@ -25,4 +25,5 @@ export type MainStackParamList = {
         mode: 'create' | 'edit' | 'view';
         user?: User;
     };
+    PettyCash: undefined;
 };
