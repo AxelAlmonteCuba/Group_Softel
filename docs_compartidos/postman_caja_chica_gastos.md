@@ -288,7 +288,44 @@ Historial completo de cajas chicas con sus custodios y evaluadores.
 
 ---
 
-### 4.2 Listar Gastos de una Caja Chica
+### 4.2 Listar Cajas Chicas por Usuario
+Obtiene el historial de cajas chicas asignadas como custodio a un usuario específico (`usuario_encargado_id`). Ideal para que un Supervisor consulte sus propias cajas o el Administrador audite a un encargado.
+- **URL:** `http://localhost:3000/api/v1/cajas-chicas/usuario/{usuario_id}`
+- **Método:** `GET`
+- **Roles Permitidos:** `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR`
+- **Respuesta (200 OK):**
+```json
+[
+  {
+    "id": "b2f5df91-fbfe-464c-8ac5-d33a506595f1",
+    "assignedAmount": "1500.50",
+    "currentBalance": "1250.50",
+    "finalBalance": "-1250.50",
+    "status": "ABIERTA",
+    "openingDate": "2026-09-03T18:19:56.000Z",
+    "closingDate": null,
+    "createdAt": "2026-09-03T18:10:33.000Z",
+    "managerUser": {
+      "id": "b529df08-a9e5-43be-8770-b09c2be12eda",
+      "nombres": "Luis",
+      "apellidos": "Pruebas",
+      "documento_identidad": "12345123",
+      "cargo": "Operario Eléctrico",
+      "rol": "SUPERVISOR"
+    },
+    "evaluatorUser": {
+      "id": "f166cbd4-57a2-42c0-8543-3047f2c6e1d6",
+      "nombres": "Admin",
+      "apellidos": "Softel",
+      "cargo": "Gerente General"
+    }
+  }
+]
+```
+
+---
+
+### 4.3 Listar Gastos de una Caja Chica
 Obtiene la lista cronológica de los gastos rendidos dentro de una caja chica específica.
 - **URL:** `http://localhost:3000/api/v1/gastos/caja/{caja_chica_id}`
 - **Método:** `GET`
@@ -328,7 +365,7 @@ Obtiene la lista cronológica de los gastos rendidos dentro de una caja chica es
 
 ---
 
-### 4.3 Bandeja de Gastos Pendientes de Aprobación
+### 4.4 Bandeja de Gastos Pendientes de Aprobación
 Obtiene todos los gastos en estado `PENDIENTE` que requieren decisión del Administrador (omite gastos huérfanos de cajas ya cerradas o liquidadas).
 - **URL:** `http://localhost:3000/api/v1/gastos/pendientes`
 - **Método:** `GET`
@@ -369,7 +406,7 @@ Obtiene todos los gastos en estado `PENDIENTE` que requieren decisión del Admin
 
 ---
 
-### 4.4 Panel de Usuarios con Reembolsos Pendientes (Deudas por Pagar)
+### 4.5 Panel de Usuarios con Reembolsos Pendientes (Deudas por Pagar)
 Agrupa y totaliza las deudas de la empresa con trabajadores por gastos directos aprobados que aún no han sido cancelados.
 - **URL:** `http://localhost:3000/api/v1/gastos/reembolsos-directos/usuarios-con-deuda`
 - **Método:** `GET`
@@ -388,7 +425,7 @@ Agrupa y totaliza las deudas de la empresa con trabajadores por gastos directos 
 
 ---
 
-### 4.5 Detalle de Reembolsos Pendientes de un Usuario
+### 4.6 Detalle de Reembolsos Pendientes de un Usuario
 Entrega el desglose individual de los gastos directos aprobados no pagados de un usuario específico, junto con el monto `totalOwed`.
 - **URL:** `http://localhost:3000/api/v1/gastos/reembolsos-directos/pendientes/{usuario_id}`
 - **Método:** `GET`

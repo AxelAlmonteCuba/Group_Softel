@@ -64,4 +64,10 @@ export class PettyCashController {
   async getAllPettyCash() {
     return await this.pettyCashService.findAll();
   }
+
+  @Get('usuario/:usuarioId')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR')
+  async getPettyCashByUser(@Param('usuarioId') usuarioId: string) {
+    return await this.pettyCashService.findByUser(usuarioId);
+  }
 }

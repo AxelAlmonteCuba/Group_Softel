@@ -267,4 +267,45 @@ export class PettyCashService {
         : null,
     }));
   }
+
+  /**
+   * Obtiene las cajas chicas asignadas a un usuario específico (ordenadas de la más reciente a la más antigua).
+   */
+  async findByUser(userId: string): Promise<any[]> {
+    const list = await this.pettyCashRepository.find({
+      where: { managerUserId: userId },
+      relations: {
+        managerUser: true,
+        evaluatorUser: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    return list.map((pc) => ({
+      id: pc.id,
+      assignedAmount: pc.assignedAmount,
+      currentBalance: pc.currentBalance,
+      finalBalance: pc.finalBalance,
+      status: pc.status,
+      openingDate: pc.openingDate,
+      closingDate: pc.closingDate,
+      createdAt: pc.createdAt,
+      managerUser: {
+        id: pc.managerUser.id,
+        nombres: pc.managerUser.nombres,
+        apellidos: pc.managerUser.apellidos,
+        documento_identidad: pc.managerUser.documento_identidad,
+        cargo: pc.managerUser.cargo,
+        rol: pc.managerUser.rol,
+      },
+      evaluatorUser: pc.evaluatorUser
+        ? {
+          id: pc.evaluatorUser.id,
+          nombres: pc.evaluatorUser.nombres,
+          apellidos: pc.evaluatorUser.apellidos,
+          cargo: pc.evaluatorUser.cargo,
+        }
+        : null,
+    }));
+  }
 }
