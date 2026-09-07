@@ -7,13 +7,14 @@ import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
 import { stylesComponents } from '@/theme/styles';
 import HeaderBar from '@/components/layout/HeaderBar';
+import CardPolicyPettyCash from '@/components/cards/CardPolicyPettyCash';
 import CardRequestAmount from '@/components/cards/CardRequestAmount';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 /**
  * Pantalla para la Solicitud de Apertura de Caja Chica.
- * Incluye cabecera estándar HeaderBar y la tarjeta de selección de monto requerida.
+ * Incluye cabecera estándar HeaderBar, tarjeta de normativa de apertura y tarjeta de selección de monto.
  */
 const RequestPettyCashScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -27,12 +28,17 @@ const RequestPettyCashScreen: React.FC = () => {
                 onBack={() => navigation.goBack()}
             />
 
-            {/* Contenedor del formulario con la tarjeta de monto */}
+            {/* Contenedor del formulario con las tarjetas correspondientes */}
             <ScrollView
                 style={stylesComponents.containerApp}
                 contentContainerStyle={{ paddingBottom: 24 }}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
+                {/* 1. Tarjeta informativa de normativa de apertura */}
+                <CardPolicyPettyCash />
+
+                {/* 2. Tarjeta de selección de monto */}
                 <CardRequestAmount
                     value={monto}
                     onChange={setMonto}
