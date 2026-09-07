@@ -172,8 +172,8 @@ export class PettyCashService {
       throw new NotFoundException('Caja chica no encontrada.');
     }
 
-    if (pettyCash.status !== 'EN_REVISION') {
-      throw new BadRequestException('Solo se pueden cerrar cajas en estado EN_REVISION.');
+    if (pettyCash.status !== 'EN_REVISION' && pettyCash.status !== 'ABIERTA') {
+      throw new BadRequestException('Solo se pueden cerrar cajas en estado ABIERTA o EN_REVISION.');
     }
 
     pettyCash.status = 'CERRADA';

@@ -84,4 +84,16 @@ export const pettyCashService = {
         const response = await api.get<PettyCashResponse>(`/cajas-chicas/${id}`);
         return response.data;
     },
+
+    /**
+     * Actualiza el estado de la caja chica (Aprobar, Abrir, Cerrar, Liquidar, Rechazar, Revisar).
+     * PATCH /api/v1/cajas-chicas/:id/estado
+     */
+    updateStatus: async (
+        id: string,
+        action: 'APROBAR' | 'RECHAZAR' | 'ABRIR' | 'REVISAR' | 'CERRAR' | 'LIQUIDAR',
+    ): Promise<PettyCashResponse> => {
+        const response = await api.patch<PettyCashResponse>(`/cajas-chicas/${id}/estado`, { action });
+        return response.data;
+    },
 };

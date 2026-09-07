@@ -9,7 +9,7 @@ import { stylesComponents } from '@/theme/styles';
 import HeaderBar from '@/components/layout/HeaderBar';
 import CardPolicyPettyCash from '@/components/cards/CardPolicyPettyCash';
 import CardRequestAmount from '@/components/cards/CardRequestAmount';
-import TextInput from '@/components/inputs/TextInput';
+import JustificationInput from '@/components/inputs/JustificationInput';
 import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import { pettyCashService } from '../services/pettyCashService';
 
@@ -110,20 +110,14 @@ const RequestPettyCashScreen: React.FC = () => {
 
                     {/* 3. Tarjeta con Input de Justificación Operativa */}
                     <View style={stylesComponents.cardHistoryContainer}>
-                        <TextInput
+                        <JustificationInput
                             label="JUSTIFICACIÓN OPERATIVA DEL GASTO"
                             placeholder="Fondo para movilidad de cuadrilla, combustible de camioneta y compras imprevistas de ferretería en obra..."
                             value={justificacion}
                             onChangeText={setJustificacion}
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
                             maxLength={255}
-                            style={{
-                                minHeight: 90,
-                                marginBottom: 0,
-                                backgroundColor: colors.surface,
-                            }}
+                            numberOfLines={4}
+                            containerStyle={{ marginBottom: 0 }}
                         />
                     </View>
                 </ScrollView>

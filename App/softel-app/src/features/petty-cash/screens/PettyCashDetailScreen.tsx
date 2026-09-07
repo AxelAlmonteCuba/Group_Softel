@@ -9,6 +9,7 @@ import { stylesComponents } from '@/theme/styles';
 import HeaderBar from '@/components/layout/HeaderBar';
 import CardDetailPettyCash from '@/components/cards/CardDetailPettyCash';
 import CardAmountsPettyCash from '@/components/cards/CardAmountsPettyCash';
+import PettyCashActionButton from '@/components/buttons/PettyCashActionButton';
 import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -44,7 +45,8 @@ const defaultCaja: PettyCashResponse = {
 
 /**
  * Pantalla de Detalle de Caja Chica (compartida para todos los roles).
- * Muestra la tarjeta informativa superior y la tarjeta financiera de montos activos.
+ * Capa pura de presentación: cabecera informativa, tarjeta de montos
+ * y botón de acción dinámica con lógica encapsulada.
  */
 const PettyCashDetailScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
@@ -87,7 +89,7 @@ const PettyCashDetailScreen: React.FC = () => {
                 onBack={() => navigation.goBack()}
             />
 
-            {/* Contenido con tarjetas de información y montos */}
+            {/* Contenido visual de la pantalla */}
             <ScrollView
                 style={stylesComponents.containerApp}
                 contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}
@@ -104,6 +106,12 @@ const PettyCashDetailScreen: React.FC = () => {
 
                         {/* 2. Tarjeta con datos de montos y barra de progreso */}
                         <CardAmountsPettyCash caja={cajaActiva} />
+
+                        {/* 3. Botón de Acción según el ciclo de vida (Lógica aislada) */}
+                        <PettyCashActionButton
+                            caja={cajaActiva}
+                            onStatusUpdated={(updated) => setCaja(updated)}
+                        />
                     </View>
                 )}
             </ScrollView>
