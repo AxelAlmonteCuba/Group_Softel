@@ -5,6 +5,7 @@ import HomeScreen from '@/features/home/screens/HomeScreen';
 import UserManagementScreen from '@/features/users/screens/UserManagementScreen';
 import AddEditUserScreen from '@/features/users/screens/AddEditUserScreen';
 import PettyCashScreen from '@/features/petty-cash/screens/PettyCashScreen';
+import RequestPettyCashScreen from '@/features/petty-cash/screens/RequestPettyCashScreen';
 import { colors } from '@/theme/colors';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -17,6 +18,8 @@ const Stack = createNativeStackNavigator<MainStackParamList>();
  *   1. Home             → Panel principal con UserTopBar (header oculto).
  *   2. UserManagement   → Lista de usuarios con header estilizado.
  *   3. AddEditUser      → Formulario crear/editar/ver usuario con título dinámico.
+ *   4. PettyCash        → Router de Caja Chica (header oculto para usar HeaderBar).
+ *   5. RequestPettyCash → Formulario para solicitar apertura de fondo.
  */
 const MainStack = () => {
     return (
@@ -62,6 +65,13 @@ const MainStack = () => {
             <Stack.Screen
                 name="PettyCash"
                 component={PettyCashScreen}
+                options={{ headerShown: false }}
+            />
+
+            {/* RequestPettyCash: Formulario de solicitud de apertura */}
+            <Stack.Screen
+                name="RequestPettyCash"
+                component={RequestPettyCashScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

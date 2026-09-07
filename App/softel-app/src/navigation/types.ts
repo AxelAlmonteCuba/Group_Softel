@@ -26,4 +26,5 @@ export type MainStackParamList = {
         user?: User;
     };
     PettyCash: undefined;
+    RequestPettyCash: undefined;
 };

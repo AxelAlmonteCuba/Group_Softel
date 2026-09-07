@@ -1,12 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 import { useAuthStore } from '@/store/authStore';
 
 import HeaderBar from '@/components/layout/HeaderBar';
 import CardEmptyPettyCash from '@/components/cards/CardEmptyPettyCash';
+import CardActivePettyCash from '@/components/cards/CardActivePettyCash';
 import CardHistoryPettyCash, { HistoryPettyCashItem } from '@/components/cards/CardHistoryPettyCash';
 import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
 
@@ -15,6 +18,8 @@ interface Props {
     onHistoryPress?: () => void;
 }
 
+type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
+
 /**
  * Pantalla para "Mi Caja Chica" (Supervisor y Trabajador).
  * Conectada al backend: verifica si el usuario tiene caja abierta y muestra condicionalmente
@@ -22,6 +27,7 @@ interface Props {
  * El historial solo se visualiza si el usuario tiene cajas anteriores registradas.
  */
 const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) => {
+    const navigation = useNavigation<NavigationProp>();
     const usuario = useAuthStore((state) => state.usuario);
     const [loading, setLoading] = useState(true);
     const [cajaEnProceso, setCajaEnProceso] = useState<PettyCashResponse | null>(null);
@@ -40,27 +46,41 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
             ) ?? null;
             setCajaEnProceso(enProceso);
 
-            // 2. Las cajas finalizadas (CERRADA, LIQUIDADA, RECHAZADA) pasan al historial
-            const pasadas = data.filter(
+            // 2. Filtrar solo cajas finalizadas o históricas para la sección de historial
+            // Cajas finalizadas/pasadas: CERRADA, LIQUIDADA, RECHAZADA
+            const cerradas = data.filter(
                 (c) => c.status === 'CERRADA' || c.status === 'LIQUIDADA' || c.status === 'RECHAZADA'
             );
-            if (pasadas.length > 0) {
-                const mapeadas: HistoryPettyCashItem[] = pasadas.map((c, idx) => ({
+
+            // Transformar al formato HistoryPettyCashItem
+            const transformedHistory: HistoryPettyCashItem[] = cerradas.map((c) => {
+                const fondo = Number(c.assignedAmount) || 0;
+                const saldoActual = Number(c.currentBalance) || 0;
+                const gastadoCalculado = Math.max(0, fondo - saldoActual);
+                const devueltoCalculado = Math.max(0, saldoActual);
+
+                const fechaAperturaFmt = c.openingDate
+                    ? new Date(c.openingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : new Date(c.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+                const fechaCierreFmt = c.closingDate
+                    ? new Date(c.closingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : 'En curso';
+
+                return {
                     id: c.id,
-                    codigo: `HCC-${new Date(c.createdAt).getFullYear()}-${String(pasadas.length - idx).padStart(3, '0')}`,
-                    obraOProyecto: 'Fondo Asignado',
-                    fechaInicio: c.openingDate ? new Date(c.openingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin fecha',
-                    fechaFin: c.closingDate ? new Date(c.closingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Liquidada',
+                    codigo: `HCC-${c.id.substring(0, 4).toUpperCase()}`,
+                    obraOProyecto: 'Obra Telecomunicaciones Norte',
+                    fechaInicio: fechaAperturaFmt,
+                    fechaFin: fechaCierreFmt,
                     estado: c.status,
-                    fondoBase: Number(c.assignedAmount) || 0,
-                    gastado: Math.max(0, (Number(c.assignedAmount) || 0) - (Number(c.currentBalance) || 0)),
-                    devuelto: Math.max(0, Number(c.finalBalance) || 0),
+                    fondoBase: fondo,
+                    gastado: gastadoCalculado,
+                    devuelto: devueltoCalculado,
                     comprobantesCount: 0,
-                }));
-                setHistoryCajas(mapeadas);
-            } else {
-                setHistoryCajas([]);
-            }
+                };
+            });
+
+            setHistoryCajas(transformedHistory);
         } catch (error) {
             console.log('Error al consultar cajas chicas del usuario:', error);
             setHistoryCajas([]);
@@ -76,7 +96,7 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
     );
 
     const handleSolicitarApertura = () => {
-        // Acción al presionar solicitar apertura
+        navigation.navigate('RequestPettyCash');
     };
 
     const handlePressDetail = (item: HistoryPettyCashItem) => {
@@ -101,32 +121,8 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
                         <ActivityIndicator size="small" color={colors.primary} />
                     </View>
                 ) : cajaEnProceso ? (
-                    <View
-                        style={{
-                            backgroundColor: colors.surface,
-                            borderRadius: 16,
-                            paddingVertical: 20,
-                            paddingHorizontal: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginTop: 4,
-                            marginBottom: 24,
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                        }}
-                    >
-                        <Text style={[stylesTexts.basicTitle, { fontSize: 18, marginBottom: 4 }]}>
-                            {cajaEnProceso.status === 'ABIERTA'
-                                ? 'caja chica abierta'
-                                : cajaEnProceso.status === 'SOLICITADA'
-                                ? 'caja chica solicitada'
-                                : cajaEnProceso.status === 'APROBADA'
-                                ? 'caja chica aprobada'
-                                : 'caja chica en revisión'}
-                        </Text>
-                        <Text style={[stylesTexts.subtitle, { marginBottom: 0 }]}>
-                            Fondo: S/ {Number(cajaEnProceso.assignedAmount).toFixed(2)} • Estado: {cajaEnProceso.status}
-                        </Text>
+                    <View style={{ marginTop: 4, marginBottom: 12 }}>
+                        <CardActivePettyCash caja={cajaEnProceso} />
                     </View>
                 ) : (
                     <View style={{ marginTop: 4, marginBottom: 24 }}>
