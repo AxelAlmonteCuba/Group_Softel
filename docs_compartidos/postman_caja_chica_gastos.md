@@ -6,6 +6,27 @@ Sirve como contrato oficial entre Backend y Frontend para la construcción de la
 
 ---
 
+### 📋 Tabla Resumen de Endpoints del Módulo
+
+| Método | Endpoint | Roles Permitidos | Descripción |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/login` | Público | Autenticación y obtención de JWT Bearer Token |
+| `POST` | `/api/v1/cajas-chicas` | `SUPERVISOR` | Solicitar apertura de caja chica (con monto y justificación) |
+| `PATCH` | `/api/v1/cajas-chicas/:id/estado` | `ADMINISTRADOR`, `SUPERVISOR` | Transiciones (`APROBAR`, `RECHAZAR`, `ABRIR`, `REVISAR`, `CERRAR`, `LIQUIDAR`) |
+| `GET` | `/api/v1/cajas-chicas` | `ADMINISTRADOR`, `CONTADOR` | Listar todas las cajas chicas |
+| `GET` | `/api/v1/cajas-chicas/usuario/:usuarioId` | `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR`, `TRABAJADOR` | Listar cajas chicas de un usuario |
+| `GET` | `/api/v1/cajas-chicas/:id` | `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR`, `TRABAJADOR` | **(NUEVO)** Obtener detalle integral de una caja chica por ID |
+| `POST` | `/api/v1/gastos` | `SUPERVISOR`, `TRABAJADOR` | Registrar gasto con comprobante WebP (caja o reembolso directo) |
+| `PATCH` | `/api/v1/gastos/:id/evaluar` | `ADMINISTRADOR` | Evaluar gasto individual (`APROBADO`, `RECHAZADO`, `OBSERVADO`) |
+| `PATCH` | `/api/v1/gastos/:id` | `SUPERVISOR`, `TRABAJADOR` | Editar / subsanar gasto registrado |
+| `GET` | `/api/v1/gastos/caja/:cajaId` | `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR` | Listar gastos de una caja chica |
+| `GET` | `/api/v1/gastos/pendientes` | `ADMINISTRADOR` | Bandeja general de gastos pendientes de evaluación |
+| `GET` | `/api/v1/gastos/reembolsos-directos/usuarios-con-deuda` | `ADMINISTRADOR`, `CONTADOR` | Panel de usuarios con deudas de reembolso pendientes |
+| `GET` | `/api/v1/gastos/reembolsos-directos/pendientes/:usuarioId` | `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR`, `TRABAJADOR` | Detalle de gastos pendientes de reembolso por usuario |
+| `PATCH` | `/api/v1/gastos/:id/reembolsar` | `ADMINISTRADOR`, `CONTADOR` | Marcar reembolso directo como pagado |
+
+---
+
 ## 🔐 Configuración Global y Autenticación
 
 Todas las rutas operativas requieren un token JWT válido.
@@ -56,16 +77,25 @@ Obtén el token de acceso para el usuario deseado (`ADMINISTRADOR`, `CONTADOR`, 
 ```
 
 ### 2.1 Solicitar Apertura de Caja Chica
-El encargado solicita un fondo base para su cuadrilla o proyecto.
+El encargado solicita un fondo base para su cuadrilla o proyecto, detallando obligatoriamente la justificación del uso y opcionalmente el proyecto asociado.
 
 - **URL:** `http://localhost:3000/api/v1/cajas-chicas`
 - **Método:** `POST`
 - **Rol Permitido:** `SUPERVISOR`
 - **Headers:** `Content-Type: application/json`
+- **Campos del Body (JSON):**
+  | Campo | Tipo | Requerido | Descripción |
+  | :--- | :--- | :---: | :--- |
+  | `assignedAmount` | Number | **Sí** | Monto solicitado para la caja chica (> 0.00). Ej: `1500.50`. |
+  | `justification` | String | **Sí** | Motivo u objetivo del fondo (máx. 255 caracteres). |
+  | `projectId` | String (UUIDv4) | **No** | ID del proyecto asociado o `null` si no aplica por ahora. |
+
 - **Cuerpo de la Petición (JSON):**
 ```json
 {
-  "assignedAmount": 1500.50
+  "assignedAmount": 1500.50,
+  "justification": "Fondo para compra de materiales de instalación y viáticos en Obra Norte",
+  "projectId": null
 }
 ```
 - **Respuesta Exitosa (201 Created):**
@@ -77,6 +107,8 @@ El encargado solicita un fondo base para su cuadrilla o proyecto.
   "currentBalance": 1500.5,
   "finalBalance": -1500.5,
   "status": "SOLICITADA",
+  "justification": "Fondo para compra de materiales de instalación y viáticos en Obra Norte",
+  "projectId": null,
   "openingDate": null,
   "closingDate": null,
   "evaluatorUserId": null,
@@ -265,6 +297,8 @@ Historial completo de cajas chicas con sus custodios y evaluadores.
     "currentBalance": "1250.50",
     "finalBalance": "-1250.50",
     "status": "ABIERTA",
+    "justification": "Fondo para compra de materiales de instalación y viáticos en Obra Norte",
+    "projectId": null,
     "openingDate": "2026-09-03T18:19:56.000Z",
     "closingDate": null,
     "createdAt": "2026-09-03T18:10:33.000Z",
@@ -302,6 +336,8 @@ Obtiene el historial de cajas chicas asignadas como custodio a un usuario espec�
     "currentBalance": "1250.50",
     "finalBalance": "-1250.50",
     "status": "ABIERTA",
+    "justification": "Fondo para compra de materiales de instalación y viáticos en Obra Norte",
+    "projectId": null,
     "openingDate": "2026-09-03T18:19:56.000Z",
     "closingDate": null,
     "createdAt": "2026-09-03T18:10:33.000Z",
@@ -325,7 +361,44 @@ Obtiene el historial de cajas chicas asignadas como custodio a un usuario espec�
 
 ---
 
-### 4.3 Listar Gastos de una Caja Chica
+### 4.3 Obtener Detalle de una Caja Chica por ID
+Permite consultar la información integral de una caja específica (saldos, justificación, proyecto vinculado, fechas de apertura y cierre, y datos del custodio y evaluador).
+- **URL:** `http://localhost:3000/api/v1/cajas-chicas/{id}`
+- **Método:** `GET`
+- **Roles Permitidos:** `ADMINISTRADOR`, `CONTADOR`, `SUPERVISOR`, `TRABAJADOR`
+- **Respuesta (200 OK):**
+```json
+{
+  "id": "b2f5df91-fbfe-464c-8ac5-d33a506595f1",
+  "assignedAmount": "1500.50",
+  "currentBalance": "1250.50",
+  "finalBalance": "-1250.50",
+  "status": "ABIERTA",
+  "justification": "Fondo para compra de materiales de instalación y viáticos en Obra Norte",
+  "projectId": null,
+  "openingDate": "2026-09-03T18:19:56.000Z",
+  "closingDate": null,
+  "createdAt": "2026-09-03T18:10:33.000Z",
+  "managerUser": {
+    "id": "b529df08-a9e5-43be-8770-b09c2be12eda",
+    "nombres": "Luis",
+    "apellidos": "Pruebas",
+    "documento_identidad": "12345123",
+    "cargo": "Operario Eléctrico",
+    "rol": "SUPERVISOR"
+  },
+  "evaluatorUser": {
+    "id": "f166cbd4-57a2-42c0-8543-3047f2c6e1d6",
+    "nombres": "Admin",
+    "apellidos": "Softel",
+    "cargo": "Gerente General"
+  }
+}
+```
+
+---
+
+### 4.4 Listar Gastos de una Caja Chica
 Obtiene la lista cronológica de los gastos rendidos dentro de una caja chica específica.
 - **URL:** `http://localhost:3000/api/v1/gastos/caja/{caja_chica_id}`
 - **Método:** `GET`
@@ -365,7 +438,7 @@ Obtiene la lista cronológica de los gastos rendidos dentro de una caja chica es
 
 ---
 
-### 4.4 Bandeja de Gastos Pendientes de Aprobación
+### 4.5 Bandeja de Gastos Pendientes de Aprobación
 Obtiene todos los gastos en estado `PENDIENTE` que requieren decisión del Administrador (omite gastos huérfanos de cajas ya cerradas o liquidadas).
 - **URL:** `http://localhost:3000/api/v1/gastos/pendientes`
 - **Método:** `GET`
@@ -406,7 +479,7 @@ Obtiene todos los gastos en estado `PENDIENTE` que requieren decisión del Admin
 
 ---
 
-### 4.5 Panel de Usuarios con Reembolsos Pendientes (Deudas por Pagar)
+### 4.6 Panel de Usuarios con Reembolsos Pendientes (Deudas por Pagar)
 Agrupa y totaliza las deudas de la empresa con trabajadores por gastos directos aprobados que aún no han sido cancelados.
 - **URL:** `http://localhost:3000/api/v1/gastos/reembolsos-directos/usuarios-con-deuda`
 - **Método:** `GET`
@@ -425,7 +498,7 @@ Agrupa y totaliza las deudas de la empresa con trabajadores por gastos directos 
 
 ---
 
-### 4.6 Detalle de Reembolsos Pendientes de un Usuario
+### 4.7 Detalle de Reembolsos Pendientes de un Usuario
 Entrega el desglose individual de los gastos directos aprobados no pagados de un usuario específico, junto con el monto `totalOwed`.
 - **URL:** `http://localhost:3000/api/v1/gastos/reembolsos-directos/pendientes/{usuario_id}`
 - **Método:** `GET`
@@ -479,7 +552,7 @@ Cuando Administración o Contabilidad transfiere o paga en efectivo el reembolso
 ## 🚀 6. Guías de Flujo Operativo Paso a Paso
 
 ### Flujo A: Ciclo Completo de Caja Chica
-1. **Supervisor** solicita caja chica (`POST /cajas-chicas` con `assignedAmount: 1500.50`). Estado: `SOLICITADA`.
+1. **Supervisor** solicita caja chica (`POST /cajas-chicas` con `assignedAmount: 1500.50` y `justification: "Fondo para compra de materiales de instalación y viáticos"`). Estado: `SOLICITADA`.
 2. **Administrador** aprueba caja (`PATCH /cajas-chicas/:id/estado` con `action: "APROBAR"`). Estado: `APROBADA`.
 3. **Administrador** entrega el dinero y abre la caja (`action: "ABRIR"`). Estado: `ABIERTA`.
 4. **Supervisor o Trabajador** suben gastos con boletas (`POST /gastos` vía form-data con `pettyCashId`). Estado: `PENDIENTE`.

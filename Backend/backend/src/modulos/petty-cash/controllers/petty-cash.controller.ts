@@ -70,4 +70,11 @@ export class PettyCashController {
   async getPettyCashByUser(@Param('usuarioId') usuarioId: string) {
     return await this.pettyCashService.findByUser(usuarioId);
   }
+
+  @Get(':id')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
+  async getPettyCashById(@Param('id') id: string) {
+    return await this.pettyCashService.findById(id);
+  }
 }
+
