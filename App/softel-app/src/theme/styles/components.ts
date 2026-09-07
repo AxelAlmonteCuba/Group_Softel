@@ -5,7 +5,9 @@ import {
     baseSurfaceBorder, 
     baseAbsoluteIcon, 
     baseSelectItem, 
-    baseShadow 
+    baseShadow,
+    baseCenter,
+    baseRowBetween,
 } from "./base";
 
 export const stylesComponents = StyleSheet.create({
@@ -352,9 +354,7 @@ export const stylesComponents = StyleSheet.create({
         alignSelf: 'center',
     },
     cardHistoryFooter: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        ...baseRowBetween,
     },
     cardHistoryBadge: {
         flexDirection: 'row',
@@ -389,12 +389,84 @@ export const stylesComponents = StyleSheet.create({
         alignItems: 'flex-start',
     },
     cardPolicyIconContainer: {
+        ...baseCenter,
         width: 44,
         height: 44,
         borderRadius: 12,
         backgroundColor: colors.primarySoft,
-        alignItems: 'center',
-        justifyContent: 'center',
         marginRight: 12,
+    },
+    // Reusable Card Elements & Micro-components
+    rowBetween: {
+        ...baseRowBetween,
+    },
+    cardInfoCol: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        marginRight: 8,
+    },
+    cardAvatarInitials: {
+        ...baseCenter,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.primary,
+        marginRight: 12,
+    },
+    badgePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        gap: 5,
+        flexShrink: 0,
+    },
+    badgeDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+    },
+    cardMetricsBox: {
+        backgroundColor: colors.background,
+        borderRadius: 12,
+        padding: 14,
+        marginBottom: 14,
+    },
+    progressBarTrack: {
+        width: '100%',
+        height: 7,
+        backgroundColor: colors.border,
+        borderRadius: 4,
+        marginTop: 12,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: colors.primary,
+        borderRadius: 4,
+    },
+    chevronButton: {
+        ...baseCenter,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.background,
+    },
+    codeBadge: {
+        backgroundColor: colors.background,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        flexShrink: 0,
+    },
+    dividerDashed: {
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        borderStyle: 'dashed',
+        marginVertical: 12,
     },
 });

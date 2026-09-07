@@ -6,6 +6,7 @@ import UserManagementScreen from '@/features/users/screens/UserManagementScreen'
 import AddEditUserScreen from '@/features/users/screens/AddEditUserScreen';
 import PettyCashScreen from '@/features/petty-cash/screens/PettyCashScreen';
 import RequestPettyCashScreen from '@/features/petty-cash/screens/RequestPettyCashScreen';
+import PettyCashDetailScreen from '@/features/petty-cash/screens/PettyCashDetailScreen';
 import { colors } from '@/theme/colors';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -72,6 +73,13 @@ const MainStack = () => {
             <Stack.Screen
                 name="RequestPettyCash"
                 component={RequestPettyCashScreen}
+                options={{ headerShown: false }}
+            />
+
+            {/* PettyCashDetail: Detalle de Caja Chica */}
+            <Stack.Screen
+                name="PettyCashDetail"
+                component={PettyCashDetailScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

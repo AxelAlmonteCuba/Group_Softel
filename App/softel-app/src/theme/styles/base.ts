@@ -8,6 +8,18 @@ export const baseSurfaceBorder: ViewStyle = {
     borderColor: colors.border,
 };
 
+export const baseCenter: ViewStyle = {
+    alignItems: 'center',
+    justifyContent: 'center',
+};
+
+export const baseRowBetween: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+};
+
+
 export const baseButton: ViewStyle = {
     borderRadius: 10,
     paddingVertical: 13,

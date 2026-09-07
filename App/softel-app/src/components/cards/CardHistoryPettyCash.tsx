@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
+import StatusBadge from '@/components/common/StatusBadge';
 
 export interface HistoryPettyCashItem {
     id: string;
@@ -22,77 +23,7 @@ interface CardHistoryPettyCashProps {
     onPressDetail?: (item: HistoryPettyCashItem) => void;
 }
 
-/**
- * Obtiene la configuración visual (fondo, texto, borde, icono) del badge según el estado.
- */
-const getStatusBadgeConfig = (status: string) => {
-    switch (status) {
-        case 'LIQUIDADA':
-            return {
-                label: 'LIQUIDADA',
-                bg: colors.successSoft, // #DCFCE7 (Verde suave)
-                color: colors.success,  // #16803C (Verde bosque)
-                borderColor: '#BBF7D0',
-                icon: 'checkmark-circle-outline' as const,
-            };
-        case 'EN_REVISION':
-            return {
-                label: 'EN REVISIÓN',
-                bg: colors.warningSoft, // #FEF3C7 (Ámbar suave)
-                color: colors.warning,  // #B7791F
-                borderColor: '#FDE68A',
-                icon: 'time-outline' as const,
-            };
-        case 'RECHAZADA':
-            return {
-                label: 'RECHAZADA',
-                bg: colors.errorSoft,   // #FEE4E2 (Rojo suave)
-                color: colors.primary,  // #B42318
-                borderColor: '#FECACA',
-                icon: 'close-circle-outline' as const,
-            };
-        case 'CERRADA':
-            return {
-                label: 'CERRADA',
-                bg: colors.background,  // #F4F4F5 (Gris neutro)
-                color: colors.info,     // #3F3F46
-                borderColor: colors.border,
-                icon: 'lock-closed-outline' as const,
-            };
-        case 'ABIERTA':
-            return {
-                label: 'ABIERTA',
-                bg: colors.successSoft,
-                color: colors.success,
-                borderColor: '#BBF7D0',
-                icon: 'radio-button-on' as const,
-            };
-        case 'APROBADA':
-            return {
-                label: 'APROBADA',
-                bg: '#E0F2FE',
-                color: '#0369A1',
-                borderColor: '#BAE6FD',
-                icon: 'checkmark-outline' as const,
-            };
-        case 'SOLICITADA':
-            return {
-                label: 'SOLICITADA',
-                bg: colors.warningSoft,
-                color: colors.warning,
-                borderColor: '#FDE68A',
-                icon: 'hourglass-outline' as const,
-            };
-        default:
-            return {
-                label: status,
-                bg: colors.background,
-                color: colors.textSecondary,
-                borderColor: colors.border,
-                icon: 'information-circle-outline' as const,
-            };
-    }
-};
+
 
 /**
  * Formatea un valor numérico a moneda peruana (S/ 1,500.00).
@@ -116,7 +47,6 @@ const CardHistoryPettyCash: React.FC<CardHistoryPettyCashProps> = ({
     data,
     onPressDetail,
 }) => {
-    const badge = getStatusBadgeConfig(data.estado);
 
     return (
         <View style={stylesComponents.cardHistoryContainer}>
@@ -126,26 +56,8 @@ const CardHistoryPettyCash: React.FC<CardHistoryPettyCashProps> = ({
                     {data.codigo}
                 </Text>
 
-                {/* Badge de Estado Dinámico */}
-                <View
-                    style={[
-                        stylesComponents.cardHistoryBadge,
-                        {
-                            backgroundColor: badge.bg,
-                            borderColor: badge.borderColor,
-                        },
-                    ]}
-                >
-                    <Ionicons name={badge.icon} size={14} color={badge.color} />
-                    <Text
-                        style={[
-                            stylesTexts.litleTitle,
-                            { fontSize: 10, marginBottom: 0, color: badge.color, fontWeight: '700' },
-                        ]}
-                    >
-                        {badge.label}
-                    </Text>
-                </View>
+                {/* Badge de Estado Dinámico reutilizable */}
+                <StatusBadge status={data.estado} variant="tag" />
             </View>
 
             {/* Fila 2: Nombre de Obra / Proyecto abajo del código con espacio */}

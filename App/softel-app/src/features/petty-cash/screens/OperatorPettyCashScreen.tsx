@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
@@ -69,7 +69,7 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
                 return {
                     id: c.id,
                     codigo: `HCC-${c.id.substring(0, 4).toUpperCase()}`,
-                    obraOProyecto: 'Obra Telecomunicaciones Norte',
+                    obraOProyecto: c.justification || 'Operación General',
                     fechaInicio: fechaAperturaFmt,
                     fechaFin: fechaCierreFmt,
                     estado: c.status,
@@ -100,7 +100,7 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
     };
 
     const handlePressDetail = (item: HistoryPettyCashItem) => {
-        console.log('Ver detalle de caja:', item.codigo);
+        navigation.navigate('PettyCashDetail', { id: item.id });
     };
 
     return (
@@ -121,9 +121,13 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
                         <ActivityIndicator size="small" color={colors.primary} />
                     </View>
                 ) : cajaEnProceso ? (
-                    <View style={{ marginTop: 4, marginBottom: 12 }}>
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
+                        style={{ marginTop: 4, marginBottom: 12 }}
+                    >
                         <CardActivePettyCash caja={cajaEnProceso} />
-                    </View>
+                    </TouchableOpacity>
                 ) : (
                     <View style={{ marginTop: 4, marginBottom: 24 }}>
                         <CardEmptyPettyCash onPressRequest={handleSolicitarApertura} />

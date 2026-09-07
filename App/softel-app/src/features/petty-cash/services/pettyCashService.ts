@@ -31,6 +31,8 @@ export interface PettyCashResponse {
     currentBalance: string | number;
     finalBalance: string | number;
     status: PettyCashStatus;
+    justification?: string | null;
+    projectId?: string | null;
     openingDate: string | null;
     closingDate: string | null;
     createdAt: string;
@@ -49,6 +51,37 @@ export const pettyCashService = {
      */
     getByUser: async (usuarioId: string): Promise<PettyCashResponse[]> => {
         const response = await api.get<PettyCashResponse[]>(`/cajas-chicas/usuario/${usuarioId}`);
+        return response.data;
+    },
+
+    /**
+     * Solicita la apertura de una nueva caja chica.
+     * POST /api/v1/cajas-chicas
+     */
+    requestPettyCash: async (data: {
+        assignedAmount: number;
+        justification: string;
+        projectId?: string | null;
+    }): Promise<PettyCashResponse> => {
+        const response = await api.post<PettyCashResponse>('/cajas-chicas', data);
+        return response.data;
+    },
+
+    /**
+     * Consulta todas las cajas chicas del sistema (Administrador y Contador).
+     * GET /api/v1/cajas-chicas
+     */
+    getAll: async (): Promise<PettyCashResponse[]> => {
+        const response = await api.get<PettyCashResponse[]>('/cajas-chicas');
+        return response.data;
+    },
+
+    /**
+     * Consulta una caja chica específica por su ID.
+     * GET /api/v1/cajas-chicas/:id
+     */
+    getById: async (id: string): Promise<PettyCashResponse> => {
+        const response = await api.get<PettyCashResponse>(`/cajas-chicas/${id}`);
         return response.data;
     },
 };
