@@ -23,10 +23,10 @@ export class ExpensesController {
   constructor(
     private readonly expensesService: ExpensesService,
     private readonly storageService: StorageService,
-  ) {}
+  ) { }
 
   @Post()
-  @Roles('SUPERVISOR', 'TRABAJADOR')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
   @UseInterceptors(FileInterceptor('receipt'))
   async registerExpense(
     @UploadedFile() file: Express.Multer.File,
@@ -90,7 +90,7 @@ export class ExpensesController {
   }
 
   @Get('caja/:cajaId')
-  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR')
+  @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
   async getExpensesByPettyCash(@Param('cajaId') cajaId: string) {
     return await this.expensesService.getExpensesByPettyCash(cajaId);
   }

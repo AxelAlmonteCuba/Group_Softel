@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { MainStackParamList } from '@/navigation/types';
 import HeaderBar from '@/components/layout/HeaderBar';
 import { colors } from '@/theme/colors';
 import { stylesComponents } from '@/theme/styles';
 import SelectInput, { SelectOption } from '@/components/inputs/SelectInput';
 import AmountInput from '@/components/inputs/AmountInput';
 import JustificationInput from '@/components/inputs/JustificationInput';
+import CardPhotoEvidence from '@/components/cards/CardPhotoEvidence';
+import ExpenseSourceSelector, { ExpenseSourceType } from '@/components/inputs/ExpenseSourceSelector';
+import ButtonPrimary from '@/components/buttons/ButtonPrimary';
+import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
 
 /**
  * Catálogo oficial de categorías de gastos sincronizado con la tabla `categorias_gastos`:
@@ -62,10 +69,109 @@ const CATEGORIAS_GASTOS: SelectOption[] = [
  * 2. AmountInput con el importe monetario y lápiz de edición.
  */
 const RegisterExpenseScreen: React.FC = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+    const route = useRoute<RouteProp<MainStackParamList, 'RegisterExpense'>>();
+    const cajaId = route.params?.cajaId;
+    const hasActivePettyCash = Boolean(cajaId);
+
     const [categoriaId, setCategoriaId] = useState<string>('');
     const [monto, setMonto] = useState<number>(0);
     const [motivo, setMotivo] = useState<string>('');
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [source, setSource] = useState<ExpenseSourceType>(
+        hasActivePettyCash ? 'caja_chica' : 'reembolso'
+    );
+    const [cajaInfo, setCajaInfo] = useState<PettyCashResponse | null>(null);
+
+    useEffect(() => {
+        if (!cajaId) return;
+        pettyCashService
+            .getById(cajaId)
+            .then((data) => setCajaInfo(data))
+            .catch((err) => console.log('Error al consultar saldo de caja:', err));
+    }, [cajaId]);
+
+    const effectiveBalance = cajaInfo?.effectiveBalance !== undefined
+        ? Number(cajaInfo.effectiveBalance)
+        : Number(cajaInfo?.currentBalance || 0);
+
+    const isOverspent =
+        source === 'caja_chica' &&
+        Boolean(cajaId) &&
+        monto > 0 &&
+        effectiveBalance > 0 &&
+        monto > effectiveBalance;
+
+    const handleSubmit = async () => {
+        if (!categoriaId) {
+            Alert.alert('Categoría Requerida', 'Por favor, selecciona una categoría para el gasto.');
+            return;
+        }
+
+        if (monto <= 0) {
+            Alert.alert('Importe Requerido', 'Por favor, ingresa un importe mayor a S/ 0.00.');
+            return;
+        }
+
+        if (!motivo.trim()) {
+            Alert.alert('Motivo Requerido', 'Por favor, ingresa la justificación o concepto del gasto.');
+            return;
+        }
+
+        if (!imageUri) {
+            Alert.alert('Comprobante Requerido', 'Es obligatorio adjuntar una fotografía del comprobante de gasto.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const pettyCashId = source === 'caja_chica' && cajaId ? cajaId : null;
+            const today = new Date().toISOString().split('T')[0];
+
+            await pettyCashService.registerExpense({
+                pettyCashId,
+                categoryId: parseInt(categoriaId, 10),
+                amount: monto,
+                reason: motivo.trim(),
+                expenseDate: today,
+                imageUri,
+            });
+
+            Alert.alert(
+                'Gasto Registrado',
+                'El comprobante y los datos del gasto se registraron exitosamente.',
+                [
+                    {
+                        text: 'Aceptar',
+                        onPress: () => {
+                            if (cajaId) {
+                                navigation.navigate('PettyCashDetail', { id: cajaId });
+                            } else {
+                                navigation.goBack();
+                            }
+                        },
+                    },
+                ]
+            );
+        } catch (error: any) {
+            console.error('Error al registrar gasto:', error);
+            const dataBackend = error?.response?.data;
+            let errorMsg = 'No se pudo registrar el gasto. Intenta nuevamente.';
+
+            if (dataBackend) {
+                if (dataBackend.errores && dataBackend.errores.length > 0) {
+                    errorMsg = dataBackend.errores[0];
+                } else if (dataBackend.mensaje) {
+                    errorMsg = dataBackend.mensaje;
+                }
+            }
+            Alert.alert('Error', errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -74,46 +180,116 @@ const RegisterExpenseScreen: React.FC = () => {
                 onBack={() => navigation.goBack()}
             />
 
-            <ScrollView
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={{ flex: 1 }}
-                contentContainerStyle={{
-                    paddingHorizontal: 16,
-                    paddingTop: 24,
-                    paddingBottom: 32,
-                }}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
             >
-                {/* Tarjeta contenedora */}
-                <View style={stylesComponents.containerForms}>
-                    {/* 1. Selector de Categorías de Gasto */}
-                    <SelectInput
-                        label="CATEGORÍA DEL GASTO"
-                        options={CATEGORIAS_GASTOS}
-                        value={categoriaId}
-                        onChange={setCategoriaId}
-                        placeholder="Seleccionar..."
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{
+                        paddingHorizontal: 16,
+                        paddingTop: 24,
+                        paddingBottom: 24,
+                    }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* 0. Selector de Origen del Pago (Caja Chica vs Reembolso) */}
+                    <ExpenseSourceSelector
+                        selectedSource={source}
+                        onSourceChange={(newSource) => {
+                            if (hasActivePettyCash) {
+                                setSource(newSource);
+                            }
+                        }}
+                        hasActivePettyCash={hasActivePettyCash}
+                        pettyCashName="Caja Chica Activa"
                     />
 
-                    {/* 2. Recuadro de Importe Total Rendido */}
-                    <AmountInput
-                        label="IMPORTE TOTAL RENDIDO"
-                        rightLabel="Moneda: PEN"
-                        value={monto}
-                        onChange={setMonto}
-                    />
+                    {/* 1. Tarjeta de Datos del Gasto */}
+                    <View style={stylesComponents.containerForms}>
+                        {/* Selector de Categorías de Gasto */}
+                        <SelectInput
+                            label="CATEGORÍA DEL GASTO"
+                            options={CATEGORIAS_GASTOS}
+                            value={categoriaId}
+                            onChange={setCategoriaId}
+                            placeholder="Seleccionar..."
+                        />
 
-                    {/* 3. Motivo / Justificación del Gasto */}
-                    <JustificationInput
-                        label="MOTIVO / JUSTIFICACIÓN DEL GASTO"
-                        placeholder="Compra de conectores de cobre y cinta aislante para empalme"
-                        value={motivo}
-                        onChangeText={setMotivo}
-                        maxLength={200}
-                        containerStyle={{ marginBottom: 0 }}
+                        {/* Recuadro de Importe Total Rendido */}
+                        <AmountInput
+                            label="IMPORTE TOTAL RENDIDO"
+                            rightLabel="Moneda: PEN"
+                            value={monto}
+                            onChange={setMonto}
+                        />
+
+                        {/* Indicador de saldo disponible real en mano */}
+                        {source === 'caja_chica' && Boolean(cajaId) && effectiveBalance > 0 && (
+                            <View style={{ marginTop: 6, marginBottom: 4 }}>
+                                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                                    Saldo disponible en mano:{' '}
+                                    <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                                        S/ {effectiveBalance.toFixed(2)}
+                                    </Text>
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Banner de advertencia preventiva flexible */}
+                        {isOverspent && (
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    backgroundColor: '#FEF9C3',
+                                    borderWidth: 1,
+                                    borderColor: '#FDE68A',
+                                    borderRadius: 8,
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 8,
+                                    gap: 8,
+                                    marginTop: 6,
+                                    marginBottom: 8,
+                                }}
+                            >
+                                <Ionicons name="alert-circle-outline" size={18} color="#A16207" />
+                                <Text style={{ fontSize: 12, color: '#A16207', flex: 1, lineHeight: 16 }}>
+                                    Este importe supera tu saldo en mano (S/ {effectiveBalance.toFixed(2)}). Se registrará para evaluación de la Administración.
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Motivo / Justificación del Gasto */}
+                        <JustificationInput
+                            label="MOTIVO / JUSTIFICACIÓN DEL GASTO"
+                            placeholder="Compra de conectores de cobre y cinta aislante para empalme"
+                            value={motivo}
+                            onChangeText={setMotivo}
+                            maxLength={200}
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                    </View>
+
+                    {/* 2. Tarjeta de Evidencia Fotográfica (Estado Inicial) */}
+                    <CardPhotoEvidence
+                        imageUri={imageUri}
+                        onImagePicked={setImageUri}
+                        onRemoveImage={() => setImageUri(null)}
+                    />
+                </ScrollView>
+
+                {/* 3. Botón inferior fijo de manera permanente */}
+                <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
+                    <ButtonPrimary
+                        text={loading ? 'Subiendo Gasto...' : 'Subir Gasto'}
+                        iconName="paper-plane-outline"
+                        onPress={handleSubmit}
+                        disabled={loading}
                     />
                 </View>
-            </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };

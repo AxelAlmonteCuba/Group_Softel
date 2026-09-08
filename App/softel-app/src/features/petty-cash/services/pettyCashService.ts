@@ -30,6 +30,9 @@ export interface PettyCashResponse {
     assignedAmount: string | number;
     currentBalance: string | number;
     finalBalance: string | number;
+    approvedAmount?: number;
+    pendingAmount?: number;
+    effectiveBalance?: number;
     status: PettyCashStatus;
     justification?: string | null;
     projectId?: string | null;
@@ -96,4 +99,97 @@ export const pettyCashService = {
         const response = await api.patch<PettyCashResponse>(`/cajas-chicas/${id}/estado`, { action });
         return response.data;
     },
+
+    /**
+     * Registra un nuevo gasto con comprobante fotográfico (multipart/form-data).
+     * POST /api/v1/gastos
+     */
+    registerExpense: async (data: RegisterExpenseData): Promise<ExpenseResponse> => {
+        const formData = new FormData();
+
+        if (data.pettyCashId) {
+            formData.append('pettyCashId', data.pettyCashId);
+        }
+        formData.append('categoryId', String(data.categoryId));
+        formData.append('amount', String(data.amount));
+        formData.append('reason', data.reason);
+        formData.append('expenseDate', data.expenseDate);
+
+        const filename = data.imageUri.split('/').pop() || 'comprobante.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+
+        formData.append('receipt', {
+            uri: data.imageUri,
+            name: filename,
+            type,
+        } as any);
+
+        const response = await api.post<ExpenseResponse>('/gastos', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    /**
+     * Consulta todos los gastos/comprobantes de una caja chica específica.
+     * GET /api/v1/gastos/caja/:cajaId
+     */
+    getExpensesByPettyCash: async (cajaId: string): Promise<ExpenseItemResponse[]> => {
+        const response = await api.get<ExpenseItemResponse[]>(`/gastos/caja/${cajaId}`);
+        return response.data;
+    },
 };
+
+export interface RegisterExpenseData {
+    pettyCashId?: string | null;
+    categoryId: number;
+    amount: number;
+    reason: string;
+    expenseDate: string;
+    imageUri: string;
+}
+
+export interface ExpenseResponse {
+    id: string;
+    caja_chica_id: string | null;
+    usuario_gasto_id: string;
+    categoria_id: number;
+    monto: number;
+    motivo: string;
+    url_comprobante: string;
+    estado: string;
+    fecha_gasto: string;
+    creado_en: string;
+}
+
+export interface ExpenseItemResponse {
+    id: string;
+    amount: number;
+    reason: string;
+    receiptUrl: string;
+    status: 'APROBADO' | 'PENDIENTE' | 'RECHAZADO' | 'OBSERVADO' | string;
+    evaluationComment?: string | null;
+    expenseDate: string;
+    createdAt: string;
+    category?: {
+        id: number;
+        name: string;
+    };
+    expenseUser?: {
+        id: string;
+        nombres: string;
+        apellidos: string;
+        documento_identidad?: string;
+        rol?: string;
+        cargo?: string;
+    };
+    evaluatorUser?: {
+        id: string;
+        nombres: string;
+        apellidos: string;
+    } | null;
+}
+

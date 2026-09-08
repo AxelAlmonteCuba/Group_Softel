@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PettyCash } from '../entities/petty-cash.entity';
+import { Expense } from '../entities/expense.entity';
 import { CreatePettyCashDto } from '../dtos/create-petty-cash.dto';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class PettyCashService {
   constructor(
     @InjectRepository(PettyCash)
     private readonly pettyCashRepository: Repository<PettyCash>,
+    @InjectRepository(Expense)
+    private readonly expenseRepository: Repository<Expense>,
     private readonly dataSource: DataSource,
   ) { }
 
@@ -231,7 +234,44 @@ export class PettyCashService {
   }
 
   /**
-   * Obtiene todas las cajas chicas (Para Administrador y Contador).
+   * Obtiene la suma de gastos PENDIENTE y APROBADO para una lista de IDs de cajas chicas.
+   * Evita consultas N+1 agrupando en una sola consulta SQL agregada.
+   */
+  private async getExpenseSumsForPettyCashIds(
+    pettyCashIds: string[],
+  ): Promise<Map<string, { pendingAmount: number; approvedAmount: number }>> {
+    const map = new Map<string, { pendingAmount: number; approvedAmount: number }>();
+    if (!pettyCashIds || pettyCashIds.length === 0) {
+      return map;
+    }
+
+    const raw = await this.expenseRepository
+      .createQueryBuilder('gasto')
+      .select('gasto.pettyCashId', 'pettyCashId')
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN gasto.status = 'PENDIENTE' THEN gasto.amount ELSE 0 END), 0)",
+        'pending',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN gasto.status = 'APROBADO' THEN gasto.amount ELSE 0 END), 0)",
+        'approved',
+      )
+      .where('gasto.pettyCashId IN (:...pettyCashIds)', { pettyCashIds })
+      .groupBy('gasto.pettyCashId')
+      .getRawMany();
+
+    for (const r of raw) {
+      map.set(r.pettyCashId, {
+        pendingAmount: Number(r.pending || 0),
+        approvedAmount: Number(r.approved || 0),
+      });
+    }
+
+    return map;
+  }
+
+  /**
+   * Obtiene todas las cajas chicas (Para Administrador y Contador) con montos calculados.
    */
   async findAll(): Promise<any[]> {
     const list = await this.pettyCashRepository.find({
@@ -242,38 +282,50 @@ export class PettyCashService {
       order: { createdAt: 'DESC' },
     });
 
-    return list.map((pc) => ({
-      id: pc.id,
-      assignedAmount: pc.assignedAmount,
-      currentBalance: pc.currentBalance,
-      finalBalance: pc.finalBalance,
-      status: pc.status,
-      justification: pc.justification,
-      projectId: pc.projectId,
-      openingDate: pc.openingDate,
-      closingDate: pc.closingDate,
-      createdAt: pc.createdAt,
-      managerUser: {
-        id: pc.managerUser.id,
-        nombres: pc.managerUser.nombres,
-        apellidos: pc.managerUser.apellidos,
-        documento_identidad: pc.managerUser.documento_identidad,
-        cargo: pc.managerUser.cargo,
-        rol: pc.managerUser.rol,
-      },
-      evaluatorUser: pc.evaluatorUser
-        ? {
-          id: pc.evaluatorUser.id,
-          nombres: pc.evaluatorUser.nombres,
-          apellidos: pc.evaluatorUser.apellidos,
-          cargo: pc.evaluatorUser.cargo,
-        }
-        : null,
-    }));
+    const ids = list.map((pc) => pc.id);
+    const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
+
+    return list.map((pc) => {
+      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0 };
+      const currentBalance = Number(pc.currentBalance);
+      const effectiveBalance = currentBalance - sums.pendingAmount;
+
+      return {
+        id: pc.id,
+        assignedAmount: Number(pc.assignedAmount),
+        currentBalance: currentBalance,
+        finalBalance: Number(pc.finalBalance),
+        approvedAmount: sums.approvedAmount,
+        pendingAmount: sums.pendingAmount,
+        effectiveBalance: effectiveBalance,
+        status: pc.status,
+        justification: pc.justification,
+        projectId: pc.projectId,
+        openingDate: pc.openingDate,
+        closingDate: pc.closingDate,
+        createdAt: pc.createdAt,
+        managerUser: {
+          id: pc.managerUser.id,
+          nombres: pc.managerUser.nombres,
+          apellidos: pc.managerUser.apellidos,
+          documento_identidad: pc.managerUser.documento_identidad,
+          cargo: pc.managerUser.cargo,
+          rol: pc.managerUser.rol,
+        },
+        evaluatorUser: pc.evaluatorUser
+          ? {
+            id: pc.evaluatorUser.id,
+            nombres: pc.evaluatorUser.nombres,
+            apellidos: pc.evaluatorUser.apellidos,
+            cargo: pc.evaluatorUser.cargo,
+          }
+          : null,
+      };
+    });
   }
 
   /**
-   * Obtiene las cajas chicas asignadas a un usuario específico (ordenadas de la más reciente a la más antigua).
+   * Obtiene las cajas chicas asignadas a un usuario específico con montos calculados.
    */
   async findByUser(userId: string): Promise<any[]> {
     const list = await this.pettyCashRepository.find({
@@ -285,38 +337,50 @@ export class PettyCashService {
       order: { createdAt: 'DESC' },
     });
 
-    return list.map((pc) => ({
-      id: pc.id,
-      assignedAmount: pc.assignedAmount,
-      currentBalance: pc.currentBalance,
-      finalBalance: pc.finalBalance,
-      status: pc.status,
-      justification: pc.justification,
-      projectId: pc.projectId,
-      openingDate: pc.openingDate,
-      closingDate: pc.closingDate,
-      createdAt: pc.createdAt,
-      managerUser: {
-        id: pc.managerUser.id,
-        nombres: pc.managerUser.nombres,
-        apellidos: pc.managerUser.apellidos,
-        documento_identidad: pc.managerUser.documento_identidad,
-        cargo: pc.managerUser.cargo,
-        rol: pc.managerUser.rol,
-      },
-      evaluatorUser: pc.evaluatorUser
-        ? {
-          id: pc.evaluatorUser.id,
-          nombres: pc.evaluatorUser.nombres,
-          apellidos: pc.evaluatorUser.apellidos,
-          cargo: pc.evaluatorUser.cargo,
-        }
-        : null,
-    }));
+    const ids = list.map((pc) => pc.id);
+    const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
+
+    return list.map((pc) => {
+      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0 };
+      const currentBalance = Number(pc.currentBalance);
+      const effectiveBalance = currentBalance - sums.pendingAmount;
+
+      return {
+        id: pc.id,
+        assignedAmount: Number(pc.assignedAmount),
+        currentBalance: currentBalance,
+        finalBalance: Number(pc.finalBalance),
+        approvedAmount: sums.approvedAmount,
+        pendingAmount: sums.pendingAmount,
+        effectiveBalance: effectiveBalance,
+        status: pc.status,
+        justification: pc.justification,
+        projectId: pc.projectId,
+        openingDate: pc.openingDate,
+        closingDate: pc.closingDate,
+        createdAt: pc.createdAt,
+        managerUser: {
+          id: pc.managerUser.id,
+          nombres: pc.managerUser.nombres,
+          apellidos: pc.managerUser.apellidos,
+          documento_identidad: pc.managerUser.documento_identidad,
+          cargo: pc.managerUser.cargo,
+          rol: pc.managerUser.rol,
+        },
+        evaluatorUser: pc.evaluatorUser
+          ? {
+            id: pc.evaluatorUser.id,
+            nombres: pc.evaluatorUser.nombres,
+            apellidos: pc.evaluatorUser.apellidos,
+            cargo: pc.evaluatorUser.cargo,
+          }
+          : null,
+      };
+    });
   }
 
   /**
-   * Obtiene una caja chica por su ID con sus relaciones de usuario.
+   * Obtiene una caja chica por su ID con sus relaciones de usuario y montos calculados.
    */
   async findById(id: string): Promise<any> {
     const pc = await this.pettyCashRepository.findOne({
@@ -331,11 +395,19 @@ export class PettyCashService {
       throw new NotFoundException('Caja chica no encontrada.');
     }
 
+    const sumsMap = await this.getExpenseSumsForPettyCashIds([id]);
+    const sums = sumsMap.get(id) || { pendingAmount: 0, approvedAmount: 0 };
+    const currentBalance = Number(pc.currentBalance);
+    const effectiveBalance = currentBalance - sums.pendingAmount;
+
     return {
       id: pc.id,
-      assignedAmount: pc.assignedAmount,
-      currentBalance: pc.currentBalance,
-      finalBalance: pc.finalBalance,
+      assignedAmount: Number(pc.assignedAmount),
+      currentBalance: currentBalance,
+      finalBalance: Number(pc.finalBalance),
+      approvedAmount: sums.approvedAmount,
+      pendingAmount: sums.pendingAmount,
+      effectiveBalance: effectiveBalance,
       status: pc.status,
       justification: pc.justification,
       projectId: pc.projectId,

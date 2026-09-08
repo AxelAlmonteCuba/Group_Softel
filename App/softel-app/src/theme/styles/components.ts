@@ -1,10 +1,10 @@
 import { StyleSheet } from "react-native";
 import { colors } from "../colors";
-import { 
-    baseButton, 
-    baseSurfaceBorder, 
-    baseAbsoluteIcon, 
-    baseSelectItem, 
+import {
+    baseButton,
+    baseSurfaceBorder,
+    baseAbsoluteIcon,
+    baseSelectItem,
     baseShadow,
     baseCenter,
     baseRowBetween,
@@ -468,5 +468,109 @@ export const stylesComponents = StyleSheet.create({
         borderBottomColor: colors.border,
         borderStyle: 'dashed',
         marginVertical: 12,
+    },
+    // ==========================================
+    // EVIDENCIA FOTOGRÁFICA / COMPROBANTES
+    // ==========================================
+    photoEvidenceCard: {
+        ...baseSurfaceBorder,
+        borderRadius: 16,
+        padding: 20,
+        width: '100%',
+        marginTop: 16,
+    },
+    photoEvidenceHeader: {
+        ...baseRowBetween,
+        marginBottom: 14,
+    },
+    photoEvidenceTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flex: 1,
+    },
+    photoEvidenceBadge: {
+        backgroundColor: colors.errorSoft,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    photoEvidenceBox: {
+        ...baseCenter,
+        backgroundColor: '#1E1B2E',
+        borderRadius: 16,
+        height: 190,
+        width: '100%',
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    photoEvidencePlaceholder: {
+        ...baseCenter,
+        width: 58,
+        height: 58,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#8B5CF6',
+        borderStyle: 'dashed',
+        backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    },
+    photoEvidenceActionsBar: {
+        position: 'absolute',
+        bottom: 12,
+        right: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    photoEvidenceChangeBtn: {
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    photoEvidenceTrashBtn: {
+        ...baseCenter,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+    },
+    photoEvidenceFooter: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 6,
+        marginTop: 12,
+    },
+    photoEvidenceFooterIcon: {
+        marginTop: 1,
+    },
+    // ==========================================
+    // BOTONES VARIANTES & FILAS DE SELECTORES
+    // ==========================================
+    buttonSmall: {
+        paddingVertical: 9,
+        paddingHorizontal: 8,
+        marginBottom: 0,
+        gap: 6,
+    },
+    expenseSourceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        marginBottom: 16,
+    },
+    flex1: {
+        flex: 1,
+    },
+    buttonDisabled: {
+        opacity: 0.45,
     },
 });

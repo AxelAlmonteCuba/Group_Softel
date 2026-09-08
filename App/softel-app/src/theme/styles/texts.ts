@@ -116,4 +116,29 @@ export const stylesTexts = StyleSheet.create({
         fontWeight: typography.weight.medium,
         color: colors.primary,
     },
+    photoEvidenceTitle: {
+        fontSize: 13,
+        letterSpacing: 0.5,
+        fontWeight: typography.weight.bold,
+        color: colors.textPrimary,
+    },
+    photoEvidenceBadgeText: {
+        color: colors.error,
+        fontSize: 12,
+        fontWeight: typography.weight.semiBold,
+    },
+    photoEvidenceChangeBtnText: {
+        color: colors.primary,
+        fontSize: 13,
+        fontWeight: typography.weight.bold,
+    },
+    photoEvidenceFooterText: {
+        fontSize: 12,
+        color: colors.textSecondary,
+        lineHeight: 16,
+        flex: 1,
+    },
+    textButtonSmall: {
+        fontSize: 13,
+    },
 });

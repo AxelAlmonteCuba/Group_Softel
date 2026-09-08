@@ -30,10 +30,20 @@ const CardAmountsPettyCash: React.FC<CardAmountsPettyCashProps> = ({
     onPress,
 }) => {
     const fondoBase = Number(caja.assignedAmount) || 0;
-    const saldoDisponible = Number(caja.currentBalance) || 0;
-    const gastado = Math.max(0, fondoBase - saldoDisponible);
+    const saldoOficial = Number(caja.currentBalance) || 0;
+    const montoPendiente = Number(caja.pendingAmount) || 0;
+    const saldoRealEnMano = caja.effectiveBalance !== undefined
+        ? Number(caja.effectiveBalance)
+        : Math.max(0, saldoOficial - montoPendiente);
+
+    const gastadoAprobado = caja.approvedAmount !== undefined
+        ? Number(caja.approvedAmount)
+        : Math.max(0, fondoBase - saldoOficial);
+
+    // Porcentaje total comprometido (aprobado + pendiente) sobre el fondo base
+    const totalComprometido = gastadoAprobado + montoPendiente;
     const porcentajeConsumido = fondoBase > 0
-        ? Math.min(100, Math.max(0, (gastado / fondoBase) * 100))
+        ? Math.min(100, Math.max(0, (totalComprometido / fondoBase) * 100))
         : 0;
 
     const formattedPercent = porcentajeConsumido % 1 === 0
@@ -177,11 +187,11 @@ const CardAmountsPettyCash: React.FC<CardAmountsPettyCashProps> = ({
                             color: colors.primary,
                         }}
                     >
-                        S/ {formatMoney(gastado)}
+                        S/ {formatMoney(gastadoAprobado)}
                     </Text>
                 </View>
 
-                {/* Caja 3: Saldo Disponible */}
+                {/* Caja 3: Saldo Disponible Real (En Mano) */}
                 <View
                     style={{
                         flex: 1,
@@ -208,10 +218,43 @@ const CardAmountsPettyCash: React.FC<CardAmountsPettyCashProps> = ({
                             color: colors.textPrimary,
                         }}
                     >
-                        S/ {formatMoney(saldoDisponible)}
+                        S/ {formatMoney(saldoRealEnMano)}
                     </Text>
+                    {montoPendiente > 0 && (
+                        <Text
+                            style={{
+                                fontSize: 9,
+                                fontWeight: '600',
+                                color: colors.warning,
+                                marginTop: 2,
+                            }}
+                        >
+                            (S/ {formatMoney(montoPendiente)} pend.)
+                        </Text>
+                    )}
                 </View>
             </View>
+
+            {/* Banner informativo de comprobantes pendientes por aprobar */}
+            {montoPendiente > 0 && (
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#FEF9C3',
+                        borderRadius: 8,
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        gap: 6,
+                        marginBottom: 14,
+                    }}
+                >
+                    <Ionicons name="time-outline" size={14} color="#A16207" />
+                    <Text style={{ fontSize: 11, color: '#A16207', fontWeight: '600', flex: 1 }}>
+                        S/ {formatMoney(montoPendiente)} en comprobantes por aprobar
+                    </Text>
+                </View>
+            )}
 
             {/* Fila Inferior: Barra de Progreso de Ejecución */}
             <View>
