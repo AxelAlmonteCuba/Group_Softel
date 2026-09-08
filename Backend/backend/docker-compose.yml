@@ -1,0 +1,151 @@
+services:
+  # ============================================================================
+  # 1. Base de Datos MySQL 8.0 Oficial (Dual-Database: softel_prod & softel_dev)
+  # ============================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: softel_mysql
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_CLAVE:-SoftelRoot2026Secure!}
+      MYSQL_DATABASE: softel_prod
+      MYSQL_USER: softel_app
+      MYSQL_PASSWORD: ${DB_CLAVE:-SoftelApp2026Secure!}
+    volumes:
+      - softel_mysql_data:/var/lib/mysql
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    ports:
+      # Expuesto ÚNICAMENTE en localhost del VPS para acceso seguro vía túnel SSH
+      - "127.0.0.1:3306:3306"
+    networks:
+      - softel_network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================================
+  # 2. Backend Producción Oficial (Puerto interno 3000 -> Base softel_prod)
+  # ============================================================================
+  backend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: softel_backend_prod
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ENTORNO=produccion
+      - PUERTO=3000
+      - URL_API=https://api.g-softel.com
+      - PREFIJO_GLOBAL=api/v1
+      - CORS_ORIGINS=
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NOMBRE=softel_prod
+      - DB_USUARIO=softel_app
+      - DB_CLAVE=${DB_CLAVE:-SoftelApp2026Secure!}
+      - DB_SINCRONIZAR=false
+      - DB_LOGGING=false
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRACION=${JWT_EXPIRACION:-8h}
+      - STORAGE_PROVIDER=cloudinary
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - PM2_INSTANCES=2
+    volumes:
+      - softel_prod_uploads:/app/uploads
+      - softel_prod_logs:/app/logs
+    networks:
+      - softel_network
+    expose:
+      - "3000"
+
+  # ============================================================================
+  # 3. Backend Pruebas / Desarrollo Continuo (Puerto interno 3000 -> Base softel_dev)
+  # ============================================================================
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: softel_backend_dev
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - ENTORNO=desarrollo
+      - PUERTO=3000
+      - URL_API=https://api.g-softel.com:8443
+      - PREFIJO_GLOBAL=api/v1
+      - CORS_ORIGINS=
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NOMBRE=softel_dev
+      - DB_USUARIO=softel_app
+      - DB_CLAVE=${DB_CLAVE:-SoftelApp2026Secure!}
+      - DB_SINCRONIZAR=true
+      - DB_LOGGING=true
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRACION=${JWT_EXPIRACION:-8h}
+      - STORAGE_PROVIDER=cloudinary
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - PM2_INSTANCES=1
+    volumes:
+      - softel_dev_uploads:/app/uploads
+      - softel_dev_logs:/app/logs
+    networks:
+      - softel_network
+    expose:
+      - "3000"
+
+  # ============================================================================
+  # 4. Proxy Inverso Caddy (SSL Automático Let's Encrypt para 443 y 8443)
+  # ============================================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: softel_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP (Validación Let's Encrypt y redirección a HTTPS)
+      - "443:443"    # HTTPS Producción Oficial
+      - "8443:8443"  # HTTPS Pruebas / Desarrollo
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - softel_network
+    depends_on:
+      - backend-prod
+      - backend-dev
+
+# ==============================================================================
+# Volúmenes Persistentes
+# ==============================================================================
+volumes:
+  softel_mysql_data:
+  softel_prod_uploads:
+  softel_prod_logs:
+  softel_dev_uploads:
+  softel_dev_logs:
+  caddy_data:
+  caddy_config:
+
+# ==============================================================================
+# Red Privada Aislada
+# ==============================================================================
+networks:
+  softel_network:
+    driver: bridge

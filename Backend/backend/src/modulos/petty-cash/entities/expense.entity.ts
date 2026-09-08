@@ -69,6 +69,6 @@ export class Expense {
   @Column({ name: 'reembolsado', type: 'boolean', default: false })
   isReimbursed!: boolean;
 
-  @CreateDateColumn({ name: 'creado_en', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ name: 'creado_en', type: 'timestamp', precision: 6 })
   createdAt!: Date;
 }

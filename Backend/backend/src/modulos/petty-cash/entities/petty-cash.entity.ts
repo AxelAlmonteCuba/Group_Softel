@@ -64,6 +64,6 @@ export class PettyCash {
   @Column({ name: 'fecha_cierre', type: 'timestamp', nullable: true })
   closingDate!: Date | null;
 
-  @CreateDateColumn({ name: 'creado_en', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ name: 'creado_en', type: 'timestamp', precision: 6 })
   createdAt!: Date;
 }

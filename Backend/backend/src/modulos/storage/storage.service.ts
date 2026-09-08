@@ -81,11 +81,20 @@ export class StorageService {
         .webp({ quality: 80 })
         .toBuffer();
 
-      // 2. Si Cloudinary está configurado, subir directamente a la nube
+      const entorno =
+        process.env.ENTORNO?.toLowerCase() === 'produccion'
+          ? 'produccion'
+          : 'desarrollo';
+
+      // 2. Si Cloudinary está configurado, subir a su respectiva carpeta según entorno
       if (this.isCloudinaryConfigured()) {
+        const baseFolder =
+          process.env.CLOUDINARY_CARPETA_BASE || `softel/${entorno}`;
+        const folder = `${baseFolder}/${subFolder}/${year}/${month}`;
+
         const uploadResult = await this.uploadToCloudinary(
           optimizedBuffer,
-          `softel/${subFolder}/${year}/${month}`,
+          folder,
           filename.replace('.webp', ''),
         );
 
@@ -95,8 +104,14 @@ export class StorageService {
         };
       }
 
-      // 3. Almacenamiento local en disco (fallback o entorno local)
-      const targetFolder = path.join(this.uploadDir, subFolder, year, month);
+      // 3. Almacenamiento local en disco (separado también por entorno)
+      const targetFolder = path.join(
+        this.uploadDir,
+        entorno,
+        subFolder,
+        year,
+        month,
+      );
       try {
         await fs.access(targetFolder);
       } catch {
@@ -106,7 +121,7 @@ export class StorageService {
       const absolutePath = path.join(targetFolder, filename);
       await fs.writeFile(absolutePath, optimizedBuffer);
 
-      const relativePath = `/${subFolder}/${year}/${month}/${filename}`;
+      const relativePath = `/${entorno}/${subFolder}/${year}/${month}/${filename}`;
       return {
         relativePath,
         filename,

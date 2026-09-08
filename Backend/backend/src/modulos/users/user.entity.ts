@@ -44,9 +44,9 @@ export class User {
   })
   estado!: string;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'timestamp', precision: 6 })
   creado_en!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({ type: 'timestamp', precision: 6 })
   actualizado_en!: Date;
 }
