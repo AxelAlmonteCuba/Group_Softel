@@ -1,8 +1,17 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-// URL base del backend según Regla 04
-const BASE_URL = 'http://192.168.1.39:3000/api/v1'; // IP Wi-Fi actual de la PC donde corre el backend
+// ==============================================================================
+// CONFIGURACIÓN DE URL DEL BACKEND (Regla 04)
+// ==============================================================================
+export const API_ENV = {
+  DEV_VPS: 'https://api.g-softel.com:8443/api/v1',  // Servidor de Pruebas en VPS (Nube HTTPS)
+  PROD_VPS: 'https://api.g-softel.com/api/v1',      // Servidor Oficial de Producción
+  LOCAL: 'http://192.168.1.39:3000/api/v1',        // Backend local en tu PC (Hot-reload)
+};
+
+// Configuración activa para pruebas (apuntando al VPS en Desarrollo)
+const BASE_URL = API_ENV.LOCAL;
 
 export const api = axios.create({
   baseURL: BASE_URL,

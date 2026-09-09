@@ -149,7 +149,7 @@ const PettyCashDetailScreen: React.FC = () => {
                             expenses={expensesList}
                             totalCount={expensesList.length}
                             onPressSeeAll={() => {
-                                // Enlace para ver lista completa si aplica
+                                navigation.navigate('AuditExpenses', { cajaId: cajaActiva.id });
                             }}
                         />
 

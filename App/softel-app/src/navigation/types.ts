@@ -29,4 +29,5 @@ export type MainStackParamList = {
     RequestPettyCash: undefined;
     PettyCashDetail: { id?: string } | undefined;
     RegisterExpense: { cajaId?: string } | undefined;
+    AuditExpenses: { cajaId?: string } | undefined;
 };

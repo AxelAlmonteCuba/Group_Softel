@@ -8,6 +8,7 @@ import PettyCashScreen from '@/features/petty-cash/screens/PettyCashScreen';
 import RequestPettyCashScreen from '@/features/petty-cash/screens/RequestPettyCashScreen';
 import PettyCashDetailScreen from '@/features/petty-cash/screens/PettyCashDetailScreen';
 import RegisterExpenseScreen from '@/features/petty-cash/screens/RegisterExpenseScreen';
+import AuditExpensesScreen from '@/features/petty-cash/screens/AuditExpensesScreen';
 import { colors } from '@/theme/colors';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -88,6 +89,13 @@ const MainStack = () => {
             <Stack.Screen
                 name="RegisterExpense"
                 component={RegisterExpenseScreen}
+                options={{ headerShown: false }}
+            />
+
+            {/* AuditExpenses: Auditoría y Lista completa de gastos de la caja */}
+            <Stack.Screen
+                name="AuditExpenses"
+                component={AuditExpensesScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>
