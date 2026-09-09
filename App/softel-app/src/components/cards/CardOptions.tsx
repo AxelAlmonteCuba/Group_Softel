@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
 import { stylesTexts, stylesComponents } from '@/theme/styles';
+import StatusBadge from '@/components/common/StatusBadge';
 
 export type ActivityType = 'NUEVO_USUARIO' | 'REPORTE' | 'RECHAZO' | 'CONFIGURACION';
 export type ExpenseStatus = 'APROBADO' | 'PENDIENTE' | 'RECHAZADO' | 'OBSERVADO' | string;
@@ -67,93 +68,6 @@ const CardOptions = ({
     const resolvedIconBg = iconBgColor || config?.bgColor || '#F4F4F5';
     const borderRadius = iconShape === 'square' || (!type && iconShape !== 'circle') ? 14 : 24;
 
-    const renderStatusBadge = (st: string) => {
-        const upper = st.toUpperCase();
-        if (upper === 'APROBADO') {
-            return (
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#F4F4F5',
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                        borderRadius: 6,
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                        gap: 4,
-                    }}
-                >
-                    <Ionicons name="checkmark" size={12} color="#52525B" />
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#52525B', letterSpacing: 0.3 }}>
-                        APROBADO
-                    </Text>
-                </View>
-            );
-        }
-
-        if (upper === 'PENDIENTE') {
-            return (
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#FEF9C3',
-                        borderRadius: 6,
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                        gap: 4,
-                    }}
-                >
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#A16207' }} />
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#A16207', letterSpacing: 0.3 }}>
-                        PENDIENTE
-                    </Text>
-                </View>
-            );
-        }
-
-        if (upper === 'RECHAZADO') {
-            return (
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: colors.errorSoft,
-                        borderRadius: 6,
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                        gap: 4,
-                    }}
-                >
-                    <Ionicons name="close" size={12} color={colors.error} />
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.error, letterSpacing: 0.3 }}>
-                        RECHAZADO
-                    </Text>
-                </View>
-            );
-        }
-
-        return (
-            <View
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: colors.warningSoft,
-                    borderRadius: 6,
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    gap: 4,
-                }}
-            >
-                <Ionicons name="alert-circle-outline" size={12} color={colors.warning} />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.warning, letterSpacing: 0.3 }}>
-                    {upper}
-                </Text>
-            </View>
-        );
-    };
-
     const renderRight = () => {
         if (rightComponent) {
             return rightComponent;
@@ -176,7 +90,7 @@ const CardOptions = ({
                             {displayAmount}
                         </Text>
                     ) : null}
-                    {status ? renderStatusBadge(status) : null}
+                    {status ? <StatusBadge status={status} /> : null}
                 </View>
             );
         }

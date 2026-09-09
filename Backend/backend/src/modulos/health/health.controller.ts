@@ -53,7 +53,9 @@ export class HealthController {
       almacenamiento: {
         proveedor: process.env.STORAGE_PROVIDER ?? 'local',
         cloudinary_activo: isCloudinaryActive,
-        carpeta_destino: `softel/${process.env.ENTORNO?.toLowerCase() === 'produccion' ? 'produccion' : 'desarrollo'}`,
+        carpeta_destino:
+          process.env.CLOUDINARY_CARPETA_BASE?.trim() ||
+          `softel/${process.env.ENTORNO?.toLowerCase() === 'produccion' ? 'produccion' : 'desarrollo'}`,
       },
       sistema: {
         memoria_ram_mb: {

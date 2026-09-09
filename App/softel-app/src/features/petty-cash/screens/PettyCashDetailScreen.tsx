@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
@@ -85,11 +85,10 @@ const PettyCashDetailScreen: React.FC = () => {
     const [expenses, setExpenses] = useState<ExpenseItemResponse[]>([]);
     const [loading, setLoading] = useState<boolean>(!!cajaId);
 
-    useEffect(() => {
+    const loadData = useCallback(() => {
         if (!cajaId) return;
 
         let isMounted = true;
-        setLoading(true);
 
         Promise.all([
             pettyCashService.getById(cajaId).catch((error) => {
@@ -114,6 +113,8 @@ const PettyCashDetailScreen: React.FC = () => {
             isMounted = false;
         };
     }, [cajaId]);
+
+    useFocusEffect(loadData);
 
     const cajaActiva = caja || defaultCaja;
     const expensesList = cajaId ? expenses : defaultExpenses;

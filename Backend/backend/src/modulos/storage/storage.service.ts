@@ -89,14 +89,16 @@ export class StorageService {
       // 2. Si Cloudinary está configurado, subir a su respectiva carpeta según entorno
       if (this.isCloudinaryConfigured()) {
         const baseFolder =
-          process.env.CLOUDINARY_CARPETA_BASE || `softel/${entorno}`;
+          process.env.CLOUDINARY_CARPETA_BASE?.trim() || `softel/${entorno}`;
         const folder = `${baseFolder}/${subFolder}/${year}/${month}`;
 
+        console.log(`[StorageService] Subiendo imagen a Cloudinary en carpeta: ${folder}`);
         const uploadResult = await this.uploadToCloudinary(
           optimizedBuffer,
           folder,
           filename.replace('.webp', ''),
         );
+        console.log(`[StorageService] Imagen subida exitosamente a Cloudinary: ${uploadResult.secure_url}`);
 
         return {
           relativePath: uploadResult.secure_url,

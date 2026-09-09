@@ -146,8 +146,14 @@ const RegisterExpenseScreen: React.FC = () => {
                     {
                         text: 'Aceptar',
                         onPress: () => {
-                            if (cajaId) {
-                                navigation.navigate('PettyCashDetail', { id: cajaId });
+                            const routes = navigation.getState()?.routes;
+                            const previousRoute =
+                                routes && routes.length >= 2 ? routes[routes.length - 2] : null;
+
+                            if (previousRoute?.name === 'PettyCashDetail') {
+                                navigation.goBack();
+                            } else if (cajaId) {
+                                navigation.replace('PettyCashDetail', { id: cajaId });
                             } else {
                                 navigation.goBack();
                             }

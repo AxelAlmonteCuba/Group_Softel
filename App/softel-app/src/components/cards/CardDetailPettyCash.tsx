@@ -67,10 +67,8 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
     const derivedInitials = getInitials(managerNombres, managerApellidos);
     const finalInitials = iniciales || derivedInitials;
 
-    const cargo = caja?.managerUser?.cargo || 'Supervisor';
-    const obra = caja?.justification || 'Obra Norte';
     const finalCodigo = codigo || (caja?.id ? `HCC-${caja.id.substring(0, 8).toUpperCase()}` : 'HCC-2026-004');
-    const finalSubtitulo = subtitulo || `${cargo} de ${obra} • ${finalCodigo}`;
+    const finalSubtitulo = subtitulo || finalCodigo;
 
     const finalFechaApertura = fechaApertura || formatDate(caja?.openingDate || caja?.createdAt);
 
@@ -112,7 +110,7 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
             {/* 3. Pie: Fecha de Apertura y Auditor Asignado */}
             <View style={stylesComponents.rowBetween}>
                 {/* Fecha de Apertura */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                     <Ionicons name="calendar-outline" size={15} color={colors.textSecondary} />
                     <Text style={[stylesTexts.cardProfileRole, { fontSize: 12, marginBottom: 0 }]}>
                         Apertura:{' '}
@@ -123,12 +121,16 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
                 </View>
 
                 {/* Separador punto */}
-                <Text style={{ color: colors.border, fontSize: 14 }}>•</Text>
+                <Text style={{ color: colors.border, fontSize: 14, marginHorizontal: 4 }}>•</Text>
 
                 {/* Auditor */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Ionicons name="shield-checkmark-outline" size={15} color={colors.textSecondary} />
-                    <Text style={[stylesTexts.cardProfileRole, { fontSize: 12, marginBottom: 0 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+                    <Ionicons name="shield-checkmark-outline" size={15} color={colors.textSecondary} style={{ flexShrink: 0 }} />
+                    <Text
+                        style={[stylesTexts.cardProfileRole, { fontSize: 12, marginBottom: 0, flexShrink: 1 }]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
                         Auditor:{' '}
                         <Text style={{ color: colors.textPrimary, fontWeight: '500' }}>
                             {finalAuditor}
