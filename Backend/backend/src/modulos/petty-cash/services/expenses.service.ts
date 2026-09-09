@@ -98,10 +98,21 @@ export class ExpensesService {
     try {
       const expense = await queryRunner.manager.findOne(Expense, {
         where: { id: expenseId },
+        relations: { pettyCash: true },
       });
 
       if (!expense) {
         throw new NotFoundException('Gasto no encontrado.');
+      }
+
+      // Regla 01 y 04: Cajas LIQUIDADA o CERRADA tienen saldos y registros congelados
+      if (
+        expense.pettyCash &&
+        (expense.pettyCash.status === 'LIQUIDADA' || expense.pettyCash.status === 'CERRADA')
+      ) {
+        throw new BadRequestException(
+          `La caja chica vinculada se encuentra en estado ${expense.pettyCash.status}. Sus gastos y saldos están congelados y no pueden ser modificados por ningún usuario.`,
+        );
       }
 
       if (expense.status !== 'PENDIENTE') {
@@ -271,10 +282,21 @@ export class ExpensesService {
   ): Promise<Expense> {
     const expense = await this.expenseRepository.findOne({
       where: { id: expenseId },
+      relations: { pettyCash: true },
     });
 
     if (!expense) {
       throw new NotFoundException('Gasto no encontrado.');
+    }
+
+    // Regla 01 y 04: Cajas LIQUIDADA o CERRADA tienen gastos congelados
+    if (
+      expense.pettyCash &&
+      (expense.pettyCash.status === 'LIQUIDADA' || expense.pettyCash.status === 'CERRADA')
+    ) {
+      throw new BadRequestException(
+        `La caja chica vinculada se encuentra en estado ${expense.pettyCash.status}. Sus gastos están congelados y no pueden ser modificados.`,
+      );
     }
 
     // Validar que el usuario sea el creador

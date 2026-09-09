@@ -34,7 +34,18 @@ interface StatusBadgeConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfig => {
-    switch (status) {
+    const raw = (status || '').trim().toUpperCase();
+    const cleanStatus = raw.includes('APROB')
+        ? 'APROBADO'
+        : raw.includes('RECHAZ')
+        ? 'RECHAZADO'
+        : raw.includes('OBSERV')
+        ? 'OBSERVADO'
+        : raw.includes('PEND')
+        ? 'PENDIENTE'
+        : raw;
+
+    switch (cleanStatus) {
         case 'SOLICITADA':
             return {
                 label: 'SOLICITADA',
@@ -90,13 +101,41 @@ export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfi
                 icon: 'checkmark-circle-outline',
             };
         case 'RECHAZADA':
+        case 'RECHAZADO':
             return {
-                label: 'RECHAZADA',
+                label: status === 'RECHAZADA' ? 'RECHAZADA' : 'RECHAZADO',
                 bgColor: colors.errorSoft,
                 dotColor: colors.error,
                 textColor: colors.error,
                 borderColor: '#FECACA',
                 icon: 'close-circle-outline',
+            };
+        case 'PENDIENTE':
+            return {
+                label: 'PENDIENTE',
+                bgColor: colors.warningSoft,
+                dotColor: colors.warning,
+                textColor: colors.warning,
+                borderColor: '#FDE68A',
+                icon: 'hourglass-outline',
+            };
+        case 'APROBADO':
+            return {
+                label: 'APROBADO',
+                bgColor: colors.successSoft,
+                dotColor: colors.success,
+                textColor: colors.success,
+                borderColor: '#BBF7D0',
+                icon: 'checkmark-outline',
+            };
+        case 'OBSERVADO':
+            return {
+                label: 'OBSERVADO',
+                bgColor: '#FEF9C3',
+                dotColor: '#CA8A04',
+                textColor: '#A16207',
+                borderColor: '#FDE68A',
+                icon: 'alert-circle-outline',
             };
         default:
             return {

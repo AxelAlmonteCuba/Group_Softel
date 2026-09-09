@@ -1,7 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
-import { stylesComponents } from '@/theme/styles';
+import { stylesComponents, stylesTexts } from '@/theme/styles';
 import CardAuditExpenseHeader from './CardAuditExpenseHeader';
 import CardAuditExpenseAmount from './CardAuditExpenseAmount';
 import CardAuditExpenseEvidence from './CardAuditExpenseEvidence';
@@ -20,11 +21,13 @@ export interface AuditExpenseData {
     ruc?: string;
     urlComprobante?: string;
     estado?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO' | string;
+    comentariosAuditoria?: string | null;
 }
 
 export interface CardAuditExpenseProps {
     gasto: AuditExpenseData;
     esAdmin?: boolean;
+    bloqueado?: boolean;
     loading?: boolean;
     colorAcento?: string;
     onAprobar?: (id: string) => void;
@@ -46,23 +49,38 @@ export interface CardAuditExpenseProps {
 export const CardAuditExpense: React.FC<CardAuditExpenseProps> = ({
     gasto,
     esAdmin = true,
+    bloqueado = false,
     loading = false,
-    colorAcento = colors.primary,
+    colorAcento,
     onAprobar,
     onObservar,
     onRechazar,
     onVerFoto,
 }) => {
+    const estadoNormalizado = (gasto.estado || '').trim().toUpperCase();
+    const acentoFinal =
+        colorAcento ||
+        (estadoNormalizado.includes('APROB')
+            ? '#16A34A'
+            : estadoNormalizado.includes('RECHAZ')
+            ? '#DC2626'
+            : estadoNormalizado.includes('OBSERV')
+            ? '#CA8A04'
+            : estadoNormalizado.includes('PEND')
+            ? '#F59E0B'
+            : colors.primary);
+
     return (
         <View style={stylesComponents.cardAuditContainer}>
             {/* Barra de Acento Vertical Izquierda */}
-            <View style={[stylesComponents.cardAuditAccentBar, { backgroundColor: colorAcento }]} />
+            <View style={[stylesComponents.cardAuditAccentBar, { backgroundColor: acentoFinal }]} />
 
-            {/* Parte 1: Motivo del gasto y Tags (Categoría + Nro) */}
+            {/* Parte 1: Motivo del gasto y Tags (Categoría + Nro + StatusBadge) */}
             <CardAuditExpenseHeader
                 motivo={gasto.motivo}
                 categoriaNombre={gasto.categoriaNombre}
                 comprobanteNumero={gasto.comprobanteNumero}
+                estado={gasto.estado}
             />
 
             {/* Parte 2: Recuadro de Importe Solicitado */}
@@ -82,9 +100,20 @@ export const CardAuditExpense: React.FC<CardAuditExpenseProps> = ({
                 onPressVerFoto={onVerFoto}
             />
 
+            {/* Comentario de Auditoría (si fue observado o rechazado) */}
+            {Boolean(gasto.comentariosAuditoria) && (
+                <View style={stylesComponents.cardAuditCommentBox}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.error} />
+                    <Text style={[stylesTexts.cardProfileRole, { color: colors.error, flex: 1, marginBottom: 0, fontWeight: '600' }]}>
+                        Auditoría: {gasto.comentariosAuditoria}
+                    </Text>
+                </View>
+            )}
+
             {/* Parte 4: Fila de Botones de Auditoría (Admin / Operador) */}
             <CardAuditExpenseActions
                 esAdmin={esAdmin}
+                bloqueado={bloqueado}
                 estado={gasto.estado}
                 loading={loading}
                 onAprobar={() => onAprobar?.(gasto.id)}

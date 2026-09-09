@@ -6,6 +6,7 @@ import { stylesComponents, stylesTexts } from '@/theme/styles';
 
 export interface CardAuditExpenseActionsProps {
     esAdmin?: boolean;
+    bloqueado?: boolean;
     estado?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO' | string;
     loading?: boolean;
     onAprobar?: () => void;
@@ -19,30 +20,20 @@ export interface CardAuditExpenseActionsProps {
  */
 export const CardAuditExpenseActions: React.FC<CardAuditExpenseActionsProps> = ({
     esAdmin = true,
+    bloqueado = false,
     estado = 'PENDIENTE',
     loading = false,
     onAprobar,
     onObservar,
     onRechazar,
 }) => {
-    // Si NO es Administrador, no tiene autoridad operativa para aprobar/rechazar (Regla 01)
-    if (!esAdmin) {
-        const esAprobado = estado === 'APROBADO';
-        const esRechazado = estado === 'RECHAZADO';
-        const esObservado = estado === 'OBSERVADO';
+    const estadoNormalizado = (estado || '').trim().toUpperCase();
+    const esPendiente = estadoNormalizado === 'PENDIENTE';
+    // Solo se muestran los botones si el usuario es Administrador, el gasto está PENDIENTE y la caja NO está bloqueada/liquidada
+    const puedeAuditar = esAdmin && esPendiente && !bloqueado;
 
-        const bg = esAprobado ? '#DCFCE7' : esRechazado ? '#FEE2E2' : esObservado ? '#FEF9C3' : '#F3F4F6';
-        const textCol = esAprobado ? '#16A34A' : esRechazado ? colors.error : esObservado ? '#A16207' : colors.textSecondary;
-        const icon = esAprobado ? 'checkmark-circle-outline' : esRechazado ? 'close-circle-outline' : esObservado ? 'alert-circle-outline' : 'time-outline';
-
-        return (
-            <View style={[stylesComponents.cardAuditStatusBadge, { backgroundColor: bg }]}>
-                <Ionicons name={icon as any} size={18} color={textCol} />
-                <Text style={[stylesTexts.badgeText, { fontSize: 13, fontWeight: '700', color: textCol }]}>
-                    ESTADO: {estado}
-                </Text>
-            </View>
-        );
+    if (!puedeAuditar) {
+        return null;
     }
 
     // Modo Administrador con botones de decisión

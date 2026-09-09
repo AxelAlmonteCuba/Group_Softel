@@ -4,10 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 
+import StatusBadge from '@/components/common/StatusBadge';
+
 export interface CardAuditExpenseHeaderProps {
     motivo: string;
     categoriaNombre?: string;
     comprobanteNumero?: string;
+    estado?: string;
 }
 
 /**
@@ -39,15 +42,21 @@ export const CardAuditExpenseHeader: React.FC<CardAuditExpenseHeaderProps> = ({
     motivo,
     categoriaNombre = 'Materiales e Insumos',
     comprobanteNumero,
+    estado,
 }) => {
     const iconName = getCategoryIcon(categoriaNombre);
 
     return (
         <View style={stylesComponents.cardAuditHeaderContainer}>
-            {/* 1. Título principal: Motivo del gasto */}
-            <Text style={[stylesTexts.textCardOptionTitle, { fontWeight: '700', marginBottom: 10, lineHeight: 22 }]}>
-                {motivo}
-            </Text>
+            {/* 1. Fila Superior: Motivo del gasto a la izquierda y StatusBadge en la parte superior derecha */}
+            <View style={stylesComponents.cardAuditHeaderTopRow}>
+                <Text style={[stylesTexts.textCardOptionTitle, stylesComponents.cardAuditMotivo]}>
+                    {motivo}
+                </Text>
+                {Boolean(estado) && (
+                    <StatusBadge status={estado} />
+                )}
+            </View>
 
             {/* 2. Fila de Tags: Categoría con icono + Nro de Comprobante */}
             <View style={stylesComponents.cardAuditTagsRow}>

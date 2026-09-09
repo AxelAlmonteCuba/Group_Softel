@@ -141,6 +141,30 @@ export const pettyCashService = {
         const response = await api.get<ExpenseItemResponse[]>(`/gastos/caja/${cajaId}`);
         return response.data;
     },
+
+    /**
+     * Consulta todos los gastos pendientes de revisión (para el Administrador).
+     * GET /api/v1/gastos/pendientes
+     */
+    getPendingExpenses: async (): Promise<ExpenseItemResponse[]> => {
+        const response = await api.get<ExpenseItemResponse[]>('/gastos/pendientes');
+        return response.data;
+    },
+
+    /**
+     * Evalúa un gasto (Aprobar, Observar, Rechazar).
+     * PATCH /api/v1/gastos/:id/evaluar
+     */
+    evaluateExpense: async (
+        id: string,
+        data: {
+            decision: 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
+            evaluationComment?: string;
+        },
+    ): Promise<ExpenseItemResponse> => {
+        const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}/evaluar`, data);
+        return response.data;
+    },
 };
 
 export interface RegisterExpenseData {
