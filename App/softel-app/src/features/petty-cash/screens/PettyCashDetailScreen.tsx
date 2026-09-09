@@ -12,6 +12,7 @@ import CardAmountsPettyCash from '@/components/cards/CardAmountsPettyCash';
 import CardRenderedExpenses from '@/components/cards/CardRenderedExpenses';
 import PettyCashActionButton from '@/components/buttons/PettyCashActionButton';
 import { pettyCashService, PettyCashResponse, ExpenseItemResponse } from '../services/pettyCashService';
+import { useAuthStore } from '@/store/authStore';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 type RouteProps = RouteProp<MainStackParamList, 'PettyCashDetail'>;
@@ -80,6 +81,7 @@ const PettyCashDetailScreen: React.FC = () => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<RouteProps>();
     const cajaId = route.params?.id;
+    const usuario = useAuthStore((state) => state.usuario);
 
     const [caja, setCaja] = useState<PettyCashResponse | null>(null);
     const [expenses, setExpenses] = useState<ExpenseItemResponse[]>([]);
@@ -154,6 +156,23 @@ const PettyCashDetailScreen: React.FC = () => {
                                     cajaId: cajaActiva.id,
                                     cajaStatus: cajaActiva.status,
                                 });
+                            }}
+                            onPressExpense={(expense) => {
+                                if (
+                                    expense.status === 'OBSERVADO' &&
+                                    (usuario?.rol === 'SUPERVISOR' ||
+                                        usuario?.rol === 'ADMINISTRADOR' ||
+                                        usuario?.rol === 'TRABAJADOR')
+                                ) {
+                                    if (cajaActiva.status === 'LIQUIDADA' || cajaActiva.status === 'CERRADA') {
+                                        return;
+                                    }
+                                    navigation.navigate('RegisterExpense', {
+                                        mode: 'edit',
+                                        cajaId: cajaActiva.id,
+                                        expense,
+                                    });
+                                }
                             }}
                         />
 

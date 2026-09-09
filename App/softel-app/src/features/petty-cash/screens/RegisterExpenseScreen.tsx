@@ -14,7 +14,9 @@ import JustificationInput from '@/components/inputs/JustificationInput';
 import CardPhotoEvidence from '@/components/cards/CardPhotoEvidence';
 import ExpenseSourceSelector, { ExpenseSourceType } from '@/components/inputs/ExpenseSourceSelector';
 import ButtonPrimary from '@/components/buttons/ButtonPrimary';
+import AlertBanner from '@/components/common/AlertBanner';
 import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
+import { resolveImageUrl } from '../hooks/useAuditExpenses';
 
 /**
  * Catálogo oficial de categorías de gastos sincronizado con la tabla `categorias_gastos`:
@@ -63,21 +65,32 @@ const CATEGORIAS_GASTOS: SelectOption[] = [
 ];
 
 /**
- * Pantalla para Registrar Gasto de Caja Chica (operador / supervisor / trabajador).
- * Integra los componentes modulares paso a paso:
- * 1. SelectInput con las categorías de BD y sus íconos representativos.
- * 2. AmountInput con el importe monetario y lápiz de edición.
+ * Pantalla para Registrar o Editar un Gasto de Caja Chica o Reembolso Directo.
+ * Soporta dos modos:
+ * - mode: 'create' (registro regular)
+ * - mode: 'edit' (subsanación de gasto OBSERVADO)
  */
 const RegisterExpenseScreen: React.FC = () => {
     const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
     const route = useRoute<RouteProp<MainStackParamList, 'RegisterExpense'>>();
-    const cajaId = route.params?.cajaId;
+
+    const mode = route.params?.mode || 'create';
+    const expense = route.params?.expense;
+    const isEditMode = mode === 'edit';
+
+    const cajaId = route.params?.cajaId || (expense as any)?.caja_chica_id || null;
     const hasActivePettyCash = Boolean(cajaId);
 
-    const [categoriaId, setCategoriaId] = useState<string>('');
-    const [monto, setMonto] = useState<number>(0);
-    const [motivo, setMotivo] = useState<string>('');
-    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [categoriaId, setCategoriaId] = useState<string>(
+        expense?.category?.id ? String(expense.category.id) : ''
+    );
+    const [monto, setMonto] = useState<number>(
+        expense?.amount ? Number(expense.amount) : 0
+    );
+    const [motivo, setMotivo] = useState<string>(expense?.reason || '');
+    const [imageUri, setImageUri] = useState<string | null>(
+        expense?.receiptUrl ? resolveImageUrl(expense.receiptUrl) : null
+    );
     const [loading, setLoading] = useState<boolean>(false);
     const [source, setSource] = useState<ExpenseSourceType>(
         hasActivePettyCash ? 'caja_chica' : 'reembolso'
@@ -91,6 +104,16 @@ const RegisterExpenseScreen: React.FC = () => {
             .then((data) => setCajaInfo(data))
             .catch((err) => console.log('Error al consultar saldo de caja:', err));
     }, [cajaId]);
+
+    // Precargar campos si llega un gasto en modo edición
+    useEffect(() => {
+        if (expense && isEditMode) {
+            if (expense.category?.id) setCategoriaId(String(expense.category.id));
+            if (expense.amount !== undefined) setMonto(Number(expense.amount));
+            if (expense.reason) setMotivo(expense.reason);
+            if (expense.receiptUrl) setImageUri(resolveImageUrl(expense.receiptUrl));
+        }
+    }, [expense, isEditMode]);
 
     const effectiveBalance = cajaInfo?.effectiveBalance !== undefined
         ? Number(cajaInfo.effectiveBalance)
@@ -127,44 +150,80 @@ const RegisterExpenseScreen: React.FC = () => {
         try {
             setLoading(true);
 
-            const pettyCashId = source === 'caja_chica' && cajaId ? cajaId : null;
-            const today = new Date().toISOString().split('T')[0];
+            if (isEditMode && expense?.id) {
+                // Modo Edición: Actualizar gasto observado
+                await pettyCashService.updateExpense(expense.id, {
+                    categoryId: parseInt(categoriaId, 10),
+                    amount: monto,
+                    reason: motivo.trim(),
+                    imageUri,
+                });
 
-            await pettyCashService.registerExpense({
-                pettyCashId,
-                categoryId: parseInt(categoriaId, 10),
-                amount: monto,
-                reason: motivo.trim(),
-                expenseDate: today,
-                imageUri,
-            });
+                Alert.alert(
+                    'Gasto Actualizado',
+                    'Las observaciones fueron corregidas. El gasto regresó a estado PENDIENTE para una nueva evaluación.',
+                    [
+                        {
+                            text: 'Aceptar',
+                            onPress: () => {
+                                const routes = navigation.getState()?.routes;
+                                const previousRoute =
+                                    routes && routes.length >= 2 ? routes[routes.length - 2] : null;
 
-            Alert.alert(
-                'Gasto Registrado',
-                'El comprobante y los datos del gasto se registraron exitosamente.',
-                [
-                    {
-                        text: 'Aceptar',
-                        onPress: () => {
-                            const routes = navigation.getState()?.routes;
-                            const previousRoute =
-                                routes && routes.length >= 2 ? routes[routes.length - 2] : null;
-
-                            if (previousRoute?.name === 'PettyCashDetail') {
-                                navigation.goBack();
-                            } else if (cajaId) {
-                                navigation.replace('PettyCashDetail', { id: cajaId });
-                            } else {
-                                navigation.goBack();
-                            }
+                                if (previousRoute?.name === 'PettyCashDetail') {
+                                    navigation.goBack();
+                                } else if (cajaId) {
+                                    navigation.replace('PettyCashDetail', { id: cajaId });
+                                } else {
+                                    navigation.goBack();
+                                }
+                            },
                         },
-                    },
-                ]
-            );
+                    ]
+                );
+            } else {
+                // Modo Creación: Registrar nuevo gasto
+                const pettyCashId = source === 'caja_chica' && cajaId ? cajaId : null;
+                const today = new Date().toISOString().split('T')[0];
+
+                await pettyCashService.registerExpense({
+                    pettyCashId,
+                    categoryId: parseInt(categoriaId, 10),
+                    amount: monto,
+                    reason: motivo.trim(),
+                    expenseDate: today,
+                    imageUri,
+                });
+
+                Alert.alert(
+                    'Gasto Registrado',
+                    'El comprobante y los datos del gasto se registraron exitosamente.',
+                    [
+                        {
+                            text: 'Aceptar',
+                            onPress: () => {
+                                const routes = navigation.getState()?.routes;
+                                const previousRoute =
+                                    routes && routes.length >= 2 ? routes[routes.length - 2] : null;
+
+                                if (previousRoute?.name === 'PettyCashDetail') {
+                                    navigation.goBack();
+                                } else if (cajaId) {
+                                    navigation.replace('PettyCashDetail', { id: cajaId });
+                                } else {
+                                    navigation.goBack();
+                                }
+                            },
+                        },
+                    ]
+                );
+            }
         } catch (error: any) {
-            console.error('Error al registrar gasto:', error);
+            console.error('Error al procesar gasto:', error);
             const dataBackend = error?.response?.data;
-            let errorMsg = 'No se pudo registrar el gasto. Intenta nuevamente.';
+            let errorMsg = isEditMode
+                ? 'No se pudo actualizar el gasto. Intenta nuevamente.'
+                : 'No se pudo registrar el gasto. Intenta nuevamente.';
 
             if (dataBackend) {
                 if (dataBackend.errores && dataBackend.errores.length > 0) {
@@ -182,7 +241,7 @@ const RegisterExpenseScreen: React.FC = () => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <HeaderBar
-                title="Registrar Gasto"
+                title={isEditMode ? 'Editar Gasto' : 'Registrar Gasto'}
                 onBack={() => navigation.goBack()}
             />
 
@@ -200,17 +259,28 @@ const RegisterExpenseScreen: React.FC = () => {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
+                    {/* Tarjeta de Observación (solo en modo edición si existe observación previa) */}
+                    {isEditMode && Boolean(expense?.evaluationComment) && (
+                        <AlertBanner
+                            type="warning"
+                            title="Motivo de Observación (Auditoría):"
+                            message={expense?.evaluationComment || ''}
+                        />
+                    )}
+
                     {/* 0. Selector de Origen del Pago (Caja Chica vs Reembolso) */}
-                    <ExpenseSourceSelector
-                        selectedSource={source}
-                        onSourceChange={(newSource) => {
-                            if (hasActivePettyCash) {
-                                setSource(newSource);
-                            }
-                        }}
-                        hasActivePettyCash={hasActivePettyCash}
-                        pettyCashName="Caja Chica Activa"
-                    />
+                    {!isEditMode && (
+                        <ExpenseSourceSelector
+                            selectedSource={source}
+                            onSourceChange={(newSource) => {
+                                if (hasActivePettyCash) {
+                                    setSource(newSource);
+                                }
+                            }}
+                            hasActivePettyCash={hasActivePettyCash}
+                            pettyCashName="Caja Chica Activa"
+                        />
+                    )}
 
                     {/* 1. Tarjeta de Datos del Gasto */}
                     <View style={stylesComponents.containerForms}>
@@ -289,8 +359,16 @@ const RegisterExpenseScreen: React.FC = () => {
                 {/* 3. Botón inferior fijo de manera permanente */}
                 <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
                     <ButtonPrimary
-                        text={loading ? 'Subiendo Gasto...' : 'Subir Gasto'}
-                        iconName="paper-plane-outline"
+                        text={
+                            loading
+                                ? isEditMode
+                                    ? 'Guardando Cambios...'
+                                    : 'Subiendo Gasto...'
+                                : isEditMode
+                                ? 'Guardar Cambios'
+                                : 'Subir Gasto'
+                        }
+                        iconName={isEditMode ? 'save-outline' : 'paper-plane-outline'}
                         onPress={handleSubmit}
                         disabled={loading}
                     />

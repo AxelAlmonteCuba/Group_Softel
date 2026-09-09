@@ -141,4 +141,17 @@ export const stylesTexts = StyleSheet.create({
     textButtonSmall: {
         fontSize: 13,
     },
+    // ==========================================
+    // TEXTOS DE ALERTA / OBSERVACIÓN (AlertBanner)
+    // ==========================================
+    alertBannerTitle: {
+        fontSize: typography.size.sm,
+        fontWeight: typography.weight.bold,
+        marginBottom: 2,
+    },
+    alertBannerMessage: {
+        fontSize: typography.size.sm,
+        fontWeight: typography.weight.regular,
+        lineHeight: 18,
+    },
 });

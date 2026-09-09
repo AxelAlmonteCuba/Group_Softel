@@ -169,5 +169,96 @@ export class StorageService {
       stream.end(buffer);
     });
   }
+
+  /**
+   * Extrae el publicId de una URL completa de Cloudinary.
+   * Maneja URLs con y sin versión/transformaciones.
+   * Ej: "https://res.cloudinary.com/b0v3fds2/image/upload/v1741549112/pruebas/gastos/2026/09/uuid.webp"
+   * -> "pruebas/gastos/2026/09/uuid"
+   */
+  extractPublicIdFromCloudinaryUrl(url: string): string | null {
+    try {
+      if (!url || !url.includes('cloudinary.com')) return null;
+
+      const uploadIndex = url.indexOf('/image/upload/');
+      if (uploadIndex === -1) return null;
+
+      let pathAfterUpload = url.substring(uploadIndex + '/image/upload/'.length);
+
+      // Quitar versión (ej: 'v1741549112/')
+      const versionMatch = pathAfterUpload.match(/(?:^|\/)(v\d+)\//);
+      if (versionMatch) {
+        const vIndex = pathAfterUpload.indexOf(versionMatch[0]);
+        pathAfterUpload = pathAfterUpload.substring(vIndex + versionMatch[0].length);
+      }
+
+      // Quitar extensión final (.webp, .jpg, etc.)
+      const lastDotIndex = pathAfterUpload.lastIndexOf('.');
+      if (lastDotIndex !== -1) {
+        pathAfterUpload = pathAfterUpload.substring(0, lastDotIndex);
+      }
+
+      return pathAfterUpload;
+    } catch (error) {
+      console.error('[StorageService] Error al extraer publicId de Cloudinary:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Elimina un archivo físico en Cloudinary o en disco local según corresponda.
+   *
+   * @param fileUrlOrPath URL absoluta de Cloudinary o ruta relativa local
+   * @returns boolean indicando si la operación fue exitosa
+   */
+  async deleteFile(fileUrlOrPath: string): Promise<boolean> {
+    if (!fileUrlOrPath) return false;
+
+    // 1. Si es Cloudinary y está configurado
+    if (this.isCloudinaryConfigured() && fileUrlOrPath.includes('cloudinary.com')) {
+      const publicId = this.extractPublicIdFromCloudinaryUrl(fileUrlOrPath);
+      if (!publicId) {
+        console.warn(`[StorageService] No se pudo extraer publicId para eliminar: ${fileUrlOrPath}`);
+        return false;
+      }
+
+      try {
+        console.log(`[StorageService] Eliminando comprobante previo de Cloudinary -> publicId: ${publicId}`);
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
+          api_key: process.env.CLOUDINARY_API_KEY?.trim(),
+          api_secret: process.env.CLOUDINARY_API_SECRET?.trim(),
+          secure: true,
+        });
+
+        const result = await cloudinary.uploader.destroy(publicId, {
+          resource_type: 'image',
+          invalidate: true,
+        });
+
+        console.log(`[StorageService] Resultado eliminación Cloudinary (${publicId}):`, result);
+        return result.result === 'ok';
+      } catch (error) {
+        console.error(`[StorageService] Error al eliminar comprobante en Cloudinary (${publicId}):`, error);
+        return false;
+      }
+    }
+
+    // 2. Si es almacenamiento local en disco
+    try {
+      const localCleanPath = fileUrlOrPath.startsWith('/')
+        ? fileUrlOrPath.slice(1)
+        : fileUrlOrPath;
+      const fullPath = path.join(this.uploadDir, localCleanPath);
+      await fs.unlink(fullPath);
+      console.log(`[StorageService] Archivo local eliminado exitosamente: ${fullPath}`);
+      return true;
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        console.warn(`[StorageService] No se pudo eliminar archivo local (${fileUrlOrPath}):`, error?.message);
+      }
+      return false;
+    }
+  }
 }
 

@@ -165,7 +165,54 @@ export const pettyCashService = {
         const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}/evaluar`, data);
         return response.data;
     },
+
+    /**
+     * Subsanar / Actualizar un gasto en estado OBSERVADO.
+     * PATCH /api/v1/gastos/:id
+     */
+    updateExpense: async (
+        id: string,
+        data: UpdateExpenseData,
+    ): Promise<ExpenseItemResponse> => {
+        const formData = new FormData();
+        if (data.categoryId !== undefined) formData.append('categoryId', String(data.categoryId));
+        if (data.amount !== undefined) formData.append('amount', String(data.amount));
+        if (data.reason !== undefined) formData.append('reason', data.reason);
+        if (data.expenseDate !== undefined) formData.append('expenseDate', data.expenseDate);
+
+        // Si se seleccionó una nueva foto local, adjuntarla en multipart
+        if (
+            data.imageUri &&
+            !data.imageUri.startsWith('http://') &&
+            !data.imageUri.startsWith('https://')
+        ) {
+            const filename = data.imageUri.split('/').pop() || 'comprobante.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+
+            formData.append('receipt', {
+                uri: data.imageUri,
+                name: filename,
+                type,
+            } as any);
+        }
+
+        const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
 };
+
+export interface UpdateExpenseData {
+    categoryId?: number;
+    amount?: number;
+    reason?: string;
+    expenseDate?: string;
+    imageUri?: string | null;
+}
 
 export interface RegisterExpenseData {
     pettyCashId?: string | null;

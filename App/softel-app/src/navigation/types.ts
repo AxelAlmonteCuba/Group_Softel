@@ -1,4 +1,5 @@
 import { User } from '@/features/users/services/userService';
+import { ExpenseItemResponse } from '@/features/petty-cash/services/pettyCashService';
 
 /**
  * Parámetros del Stack de Autenticación.
@@ -17,6 +18,7 @@ export type AuthStackParamList = {
  *     · mode 'create' → campos vacíos, sin user.
  *     · mode 'edit'   → campos precargados con user.
  *     · mode 'view'   → campos bloqueados, solo lectura.
+ * - RegisterExpense: Formulario de gasto (create / edit).
  */
 export type MainStackParamList = {
     Home: undefined;
@@ -28,6 +30,10 @@ export type MainStackParamList = {
     PettyCash: undefined;
     RequestPettyCash: undefined;
     PettyCashDetail: { id?: string } | undefined;
-    RegisterExpense: { cajaId?: string } | undefined;
+    RegisterExpense: {
+        mode?: 'create' | 'edit';
+        cajaId?: string;
+        expense?: ExpenseItemResponse;
+    } | undefined;
     AuditExpenses: { cajaId?: string; cajaStatus?: string } | undefined;
 };

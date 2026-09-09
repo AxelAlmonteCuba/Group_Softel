@@ -102,9 +102,31 @@ export const CardAuditExpense: React.FC<CardAuditExpenseProps> = ({
 
             {/* Comentario de Auditoría (si fue observado o rechazado) */}
             {Boolean(gasto.comentariosAuditoria) && (
-                <View style={stylesComponents.cardAuditCommentBox}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.error} />
-                    <Text style={[stylesTexts.cardProfileRole, { color: colors.error, flex: 1, marginBottom: 0, fontWeight: '600' }]}>
+                <View
+                    style={[
+                        stylesComponents.cardAuditCommentBox,
+                        gasto.estado === 'OBSERVADO' && {
+                            backgroundColor: '#FEF9C3',
+                            borderColor: '#FDE68A',
+                        },
+                    ]}
+                >
+                    <Ionicons
+                        name="chatbubble-ellipses-outline"
+                        size={16}
+                        color={gasto.estado === 'OBSERVADO' ? '#CA8A04' : colors.error}
+                    />
+                    <Text
+                        style={[
+                            stylesTexts.cardProfileRole,
+                            {
+                                color: gasto.estado === 'OBSERVADO' ? '#A16207' : colors.error,
+                                flex: 1,
+                                marginBottom: 0,
+                                fontWeight: '600',
+                            },
+                        ]}
+                    >
                         Auditoría: {gasto.comentariosAuditoria}
                     </Text>
                 </View>

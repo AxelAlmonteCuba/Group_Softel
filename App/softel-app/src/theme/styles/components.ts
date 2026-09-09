@@ -787,4 +787,19 @@ export const stylesComponents = StyleSheet.create({
         marginBottom: 14,
         gap: 10,
     },
+    // ==========================================
+    // BANNER DE ALERTA / OBSERVACIÓN (AlertBanner)
+    // ==========================================
+    alertBannerContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 14,
+        gap: 10,
+        marginBottom: 16,
+    },
+    alertBannerContent: {
+        flex: 1,
+    },
 });

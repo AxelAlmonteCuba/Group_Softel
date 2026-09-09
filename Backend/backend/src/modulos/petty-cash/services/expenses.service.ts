@@ -10,6 +10,7 @@ import { PettyCash } from '../entities/petty-cash.entity';
 import { CreateExpenseDto } from '../dtos/create-expense.dto';
 import { EvaluateExpenseDto, ExpenseDecision } from '../dtos/evaluate-expense.dto';
 import { UpdateExpenseDto } from '../dtos/update-expense.dto';
+import { StorageService } from '../../storage/storage.service';
 
 @Injectable()
 export class ExpensesService {
@@ -19,6 +20,7 @@ export class ExpensesService {
     @InjectRepository(PettyCash)
     private readonly pettyCashRepository: Repository<PettyCash>,
     private readonly dataSource: DataSource,
+    private readonly storageService: StorageService,
   ) { }
 
   /**
@@ -299,15 +301,22 @@ export class ExpensesService {
       );
     }
 
-    // Validar que el usuario sea el creador
-    if (expense.expenseUserId !== userId) {
-      throw new BadRequestException('Solo el creador del gasto puede editarlo.');
+    // Validar que el usuario sea el creador del gasto o el encargado de la caja chica
+    const isCreator = expense.expenseUserId === userId;
+    const isManager = Boolean(expense.pettyCash && expense.pettyCash.managerUserId === userId);
+
+    if (!isCreator && !isManager) {
+      throw new BadRequestException(
+        'Solo el creador del gasto o el encargado de la caja pueden editarlo.',
+      );
     }
 
     // Solo se puede editar si está OBSERVADO
     if (expense.status !== 'OBSERVADO') {
       throw new BadRequestException('Solo se pueden editar gastos en estado OBSERVADO.');
     }
+
+    const previousReceiptUrl = expense.receiptUrl;
 
     // Actualizar campos
     if (dto.categoryId !== undefined) expense.categoryId = dto.categoryId;
@@ -321,7 +330,16 @@ export class ExpensesService {
     expense.evaluationComment = null;
     expense.evaluatorUserId = null; // Se limpia el evaluador previo
 
-    return await this.expenseRepository.save(expense);
+    const savedExpense = await this.expenseRepository.save(expense);
+
+    // Si se subió un nuevo comprobante diferente al anterior, eliminar el anterior de Cloudinary/disco
+    if (newReceiptUrl && previousReceiptUrl && previousReceiptUrl !== newReceiptUrl) {
+      this.storageService.deleteFile(previousReceiptUrl).catch((err) => {
+        console.error('[ExpensesService] Error al eliminar comprobante previo en storage:', err);
+      });
+    }
+
+    return savedExpense;
   }
 
   /**
