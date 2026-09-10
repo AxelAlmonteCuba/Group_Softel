@@ -187,8 +187,20 @@ const CardAmountsPettyCash: React.FC<CardAmountsPettyCashProps> = ({
                             color: colors.primary,
                         }}
                     >
-                        S/ {formatMoney(gastadoAprobado)}
+                        S/ {formatMoney(totalComprometido)}
                     </Text>
+                    {montoPendiente > 0 && (
+                        <Text
+                            style={{
+                                fontSize: 9,
+                                fontWeight: '600',
+                                color: colors.primary,
+                                marginTop: 2,
+                            }}
+                        >
+                            (S/ {formatMoney(montoPendiente)} pend.)
+                        </Text>
+                    )}
                 </View>
 
                 {/* Caja 3: Saldo Disponible Real (En Mano) */}
@@ -209,16 +221,16 @@ const CardAmountsPettyCash: React.FC<CardAmountsPettyCashProps> = ({
                             marginBottom: 4,
                         }}
                     >
-                        SALDO DISP.
+                        {saldoRealEnMano < 0 ? 'A REEMBOLSAR' : 'SALDO DISP.'}
                     </Text>
                     <Text
                         style={{
                             fontSize: 14,
                             fontWeight: '700',
-                            color: colors.textPrimary,
+                            color: saldoRealEnMano < 0 ? colors.primary : colors.textPrimary,
                         }}
                     >
-                        S/ {formatMoney(saldoRealEnMano)}
+                        S/ {formatMoney(Math.abs(saldoRealEnMano))}
                     </Text>
                     {montoPendiente > 0 && (
                         <Text

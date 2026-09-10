@@ -10,8 +10,9 @@ import HeaderBar from '@/components/layout/HeaderBar';
 import CardDetailPettyCash from '@/components/cards/CardDetailPettyCash';
 import CardAmountsPettyCash from '@/components/cards/CardAmountsPettyCash';
 import CardRenderedExpenses from '@/components/cards/CardRenderedExpenses';
-import PettyCashActionButton from '@/components/buttons/PettyCashActionButton';
+import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import ButtonOutline from '@/components/buttons/ButtonOutline';
+import FabButton from '@/components/buttons/FabButton';
 import { usePettyCashActions } from '../hooks/usePettyCashActions';
 import { pettyCashService, PettyCashResponse, ExpenseItemResponse } from '../services/pettyCashService';
 import { useAuthStore } from '@/store/authStore';
@@ -124,6 +125,7 @@ const PettyCashDetailScreen: React.FC = () => {
     const expensesList = cajaId ? expenses : defaultExpenses;
 
     const {
+        actionConfig,
         secondaryActionConfig,
         actionLoading,
         executeAction,
@@ -131,6 +133,15 @@ const PettyCashDetailScreen: React.FC = () => {
         caja: cajaActiva,
         onStatusUpdated: (updated) => setCaja(updated),
     });
+
+    const canRegisterExpense = cajaActiva.status === 'ABIERTA';
+
+    const handleRegisterExpense = () => {
+        navigation.navigate('RegisterExpense', {
+            mode: 'create',
+            cajaId: cajaActiva.id,
+        });
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -202,12 +213,31 @@ const PettyCashDetailScreen: React.FC = () => {
                 )}
             </ScrollView>
 
-            {/* 4. Botón de Acción estático en la parte inferior */}
-            {!loading && (
-                <PettyCashActionButton
-                    caja={cajaActiva}
-                    onStatusUpdated={(updated) => setCaja(updated)}
+            {/* 4. Botón Flotante '+' para registrar gastos en caja abierta */}
+            {!loading && canRegisterExpense && (
+                <FabButton
+                    onPress={handleRegisterExpense}
+                    style={actionConfig ? { bottom: 84 } : undefined}
                 />
+            )}
+
+            {/* 5. Botón de Acción administrativa estático en la parte inferior */}
+            {!loading && actionConfig && (
+                <View
+                    style={{
+                        paddingHorizontal: 14,
+                        paddingTop: 8,
+                        paddingBottom: 12,
+                        backgroundColor: colors.background,
+                    }}
+                >
+                    <ButtonPrimary
+                        text={actionConfig.label}
+                        iconName={actionConfig.icon}
+                        onPress={() => executeAction(actionConfig)}
+                        loading={actionLoading}
+                    />
+                </View>
             )}
         </SafeAreaView>
     );

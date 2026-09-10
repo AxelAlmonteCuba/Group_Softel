@@ -44,10 +44,22 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
     onPress,
 }) => {
     const fondoBase = Number(caja.assignedAmount) || 0;
-    const saldoDisponible = Number(caja.currentBalance) || 0;
-    const gastado = Math.max(0, fondoBase - saldoDisponible);
+    const saldoOficial = Number(caja.currentBalance) || 0;
+    const montoPendiente = Number(caja.pendingAmount) || 0;
+    const gastadoAprobado = caja.approvedAmount !== undefined
+        ? Number(caja.approvedAmount)
+        : Math.max(0, fondoBase - saldoOficial);
+
+    // Total gastado / rendido (aprobado + pendiente de auditar)
+    const gastadoTotal = gastadoAprobado + montoPendiente;
+
+    // Saldo real en mano que le queda al custodio
+    const saldoRealEnMano = caja.effectiveBalance !== undefined
+        ? Number(caja.effectiveBalance)
+        : Math.max(0, saldoOficial - montoPendiente);
+
     const porcentajeConsumido = fondoBase > 0
-        ? Math.min(100, Math.max(0, (gastado / fondoBase) * 100))
+        ? Math.min(100, Math.max(0, (gastadoTotal / fondoBase) * 100))
         : 0;
 
     const formattedPercent = porcentajeConsumido % 1 === 0
@@ -64,14 +76,55 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
     const codigo = `HCC-${caja.id.substring(0, 4).toUpperCase()}`;
     const subtitulo = `${cargo} ${detalleObra} • ${codigo}`;
 
-    // Etiqueta del saldo inferior según el estado
-    let labelSaldo = 'Saldo por devolver: ';
-    if (caja.status === 'ABIERTA') {
-        labelSaldo = 'Saldo disponible: ';
-    } else if (caja.status === 'SOLICITADA') {
+    // Etiqueta y monto del saldo inferior según el estado
+    let labelSaldo = 'Saldo disponible: ';
+    let displaySaldo = saldoRealEnMano;
+
+    if (caja.status === 'SOLICITADA') {
         labelSaldo = 'Monto solicitado: ';
+        displaySaldo = fondoBase;
     } else if (caja.status === 'LIQUIDADA') {
-        labelSaldo = 'Saldo final liquidado: ';
+        // En estado LIQUIDADA la regularización ya se ejecutó formalmente
+        const finalVal = Number(caja.finalBalance) || 0;
+        if (finalVal > 0) {
+            labelSaldo = 'Saldo devuelto a trabajador: ';
+            displaySaldo = Math.abs(finalVal);
+        } else if (finalVal < 0) {
+            labelSaldo = 'Saldo devuelto a empresa: ';
+            displaySaldo = Math.abs(finalVal);
+        } else {
+            labelSaldo = 'Saldo final liquidado: ';
+            displaySaldo = 0;
+        }
+    } else if (caja.status === 'CERRADA') {
+        // En estado CERRADA el saldo está congelado pendiente de devolución física
+        if (saldoRealEnMano < 0) {
+            labelSaldo = 'Por devolver a trabajador: ';
+            displaySaldo = Math.abs(saldoRealEnMano);
+        } else if (saldoRealEnMano > 0) {
+            labelSaldo = 'Por devolver a empresa: ';
+            displaySaldo = saldoRealEnMano;
+        } else {
+            labelSaldo = 'Caja cuadrada: ';
+            displaySaldo = 0;
+        }
+    } else if (caja.status === 'EN_REVISION') {
+        if (saldoRealEnMano < 0) {
+            labelSaldo = 'Por devolver a trabajador: ';
+            displaySaldo = Math.abs(saldoRealEnMano);
+        } else {
+            labelSaldo = 'Saldo por regularizar: ';
+            displaySaldo = saldoRealEnMano;
+        }
+    } else {
+        // ABIERTA u otros
+        if (saldoRealEnMano < 0) {
+            labelSaldo = 'Por devolver a trabajador: ';
+            displaySaldo = Math.abs(saldoRealEnMano);
+        } else {
+            labelSaldo = 'Saldo disponible: ';
+            displaySaldo = saldoRealEnMano;
+        }
     }
 
     return (
@@ -161,7 +214,7 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
                                 },
                             ]}
                         >
-                            S/ {formatMoney(gastado)}
+                            S/ {formatMoney(gastadoTotal)}
                         </Text>
                     </View>
                 </View>
@@ -175,6 +228,27 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
                         ]}
                     />
                 </View>
+
+                {/* Banner de Comprobantes Pendientes de Auditar */}
+                {montoPendiente > 0 && (
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: '#FEF9C3',
+                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            gap: 6,
+                            marginTop: 10,
+                        }}
+                    >
+                        <Ionicons name="time-outline" size={14} color="#A16207" />
+                        <Text style={{ fontSize: 11, color: '#A16207', fontWeight: '600', flex: 1 }}>
+                            S/ {formatMoney(montoPendiente)} en comprobantes por auditar
+                        </Text>
+                    </View>
+                )}
             </View>
 
             {/* 3. Pie de Tarjeta: Saldo pendiente y Botón Chevron */}
@@ -182,7 +256,7 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
                 <Text style={[stylesTexts.subtitle, { textAlign: 'left', marginBottom: 0 }]}>
                     {labelSaldo}
                     <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
-                        S/ {formatMoney(saldoDisponible)}
+                        S/ {formatMoney(displaySaldo)}
                     </Text>
                 </Text>
 

@@ -51,12 +51,7 @@ export const usePettyCashActions = ({
         if (role !== 'ADMINISTRADOR') {
             if (caja.status === 'ABIERTA') {
                 return {
-                    primary: {
-                        label: 'Registrar Gasto',
-                        icon: 'receipt-outline',
-                        type: 'NAVIGATE',
-                        variant: 'primary',
-                    },
+                    primary: null, // El registro de gasto se realiza mediante el botón flotante '+'
                     secondary: {
                         label: 'Finalizar y Enviar a Revisión',
                         icon: 'checkmark-circle-outline',

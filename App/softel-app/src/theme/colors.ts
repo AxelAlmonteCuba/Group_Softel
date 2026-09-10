@@ -30,6 +30,8 @@ export const colors = {
   errorSoft: '#FEE4E2',
   info: '#3F3F46',         // CERRADO, NO APLICA
   infoSoft: '#F4F4F5',
+  approved: '#4F46E5',     // APROBADA (Azul Índigo / Autorización administrativa)
+  approvedSoft: '#EEF2FF',
   liquidated: '#0369A1',   // LIQUIDADA (Celeste / Azul cielo)
   liquidatedSoft: '#E0F2FE',
 } as const;

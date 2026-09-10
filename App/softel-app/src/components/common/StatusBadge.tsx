@@ -40,9 +40,9 @@ export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfi
         : raw.includes('REEMBOLS')
         ? 'REEMBOLSADO'
         : raw.includes('APROB')
-        ? 'APROBADO'
+        ? (raw.includes('APROBADA') ? 'APROBADA' : 'APROBADO')
         : raw.includes('RECHAZ')
-        ? 'RECHAZADO'
+        ? (raw.includes('RECHAZADA') ? 'RECHAZADA' : 'RECHAZADO')
         : raw.includes('OBSERV')
         ? 'OBSERVADO'
         : raw.includes('PEND')
@@ -62,11 +62,11 @@ export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfi
         case 'APROBADA':
             return {
                 label: 'APROBADA',
-                bgColor: colors.successSoft,
-                dotColor: colors.success,
-                textColor: colors.success,
-                borderColor: '#BBF7D0',
-                icon: 'checkmark-outline',
+                bgColor: colors.approvedSoft,
+                dotColor: colors.approved,
+                textColor: colors.approved,
+                borderColor: '#C7D2FE',
+                icon: 'checkmark-circle-outline',
             };
         case 'ABIERTA':
             return {
