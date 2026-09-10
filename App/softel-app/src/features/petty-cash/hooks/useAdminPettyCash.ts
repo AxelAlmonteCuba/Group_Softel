@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '@/theme/colors';
 import { FilterOption } from '@/components/inputs/FilterChips';
 import { useAuthStore } from '@/store/authStore';
@@ -19,14 +20,15 @@ export const useAdminPettyCash = () => {
     const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('TODAS');
     const [selectedExpenseFilter, setSelectedExpenseFilter] = useState<string>('TODOS');
 
-    // 1. Estado y carga de Cajas Chicas
-    const [cajas, setCajas] = useState<PettyCashResponse[]>([]);
-    const [cajasLoading, setCajasLoading] = useState<boolean>(true);
+    // 1. Estado y carga de Cajas Chicas con lectura instantánea de caché
+    const cachedCajas = pettyCashService.getCachedAllBoxes();
+    const [cajas, setCajas] = useState<PettyCashResponse[]>(cachedCajas || []);
+    const [cajasLoading, setCajasLoading] = useState<boolean>(!cachedCajas);
     const [cajasRefreshing, setCajasRefreshing] = useState<boolean>(false);
 
-    const cargarCajas = useCallback(async () => {
+    const cargarCajas = useCallback(async (force = false) => {
         try {
-            const data = await pettyCashService.getAll();
+            const data = await pettyCashService.getAll(force);
             setCajas(data || []);
         } catch (error) {
             console.log('Error al cargar cajas chicas para el Administrador:', error);
@@ -36,17 +38,21 @@ export const useAdminPettyCash = () => {
         }
     }, []);
 
-    useEffect(() => {
-        cargarCajas();
-    }, [cargarCajas]);
-
     // 2. Hook de auditoría exclusivo para Reembolsos Directos (gastos sin caja chica)
     const directAudit = useAuditExpenses(undefined, isAdmin, undefined, true);
+
+    useFocusEffect(
+        useCallback(() => {
+            // Reutiliza caché si tiene menos de 60s; de lo contrario actualiza en segundo plano
+            cargarCajas(false);
+            directAudit.fetchExpenses(false, false);
+        }, [cargarCajas, directAudit.fetchExpenses])
+    );
 
     const handleRefresh = useCallback(() => {
         if (selectedTab === 'cajas') {
             setCajasRefreshing(true);
-            cargarCajas();
+            cargarCajas(true);
         } else {
             directAudit.handleRefresh();
         }

@@ -1,4 +1,5 @@
 import { api } from '@/services/api';
+import { dashboardService } from '@/features/home/services/dashboardService';
 
 export type PettyCashStatus =
     | 'SOLICITADA'
@@ -33,6 +34,8 @@ export interface PettyCashResponse {
     approvedAmount?: number;
     pendingAmount?: number;
     effectiveBalance?: number;
+    approvedExpensesCount?: number;
+    totalExpensesCount?: number;
     status: PettyCashStatus;
     justification?: string | null;
     projectId?: string | null;
@@ -43,17 +46,46 @@ export interface PettyCashResponse {
     evaluatorUser: PettyCashEvaluatorUser | null;
 }
 
+const CACHE_TTL_MS = 60 * 1000; // 60 segundos de gracia
+
+interface CacheRecord<T> {
+    data: T;
+    timestamp: number;
+}
+
+let allBoxesCache: CacheRecord<PettyCashResponse[]> | null = null;
+const userBoxesCache = new Map<string, CacheRecord<PettyCashResponse[]>>();
+let allDirectExpensesCache: CacheRecord<ExpenseItemResponse[]> | null = null;
+const userDirectExpensesCache = new Map<string, CacheRecord<ExpenseItemResponse[]>>();
+
+/**
+ * Invalida toda la caché de caja chica, reembolsos y dashboard cuando ocurre una mutación.
+ */
+export const invalidatePettyCashCache = () => {
+    allBoxesCache = null;
+    userBoxesCache.clear();
+    allDirectExpensesCache = null;
+    userDirectExpensesCache.clear();
+    dashboardService.clearCache();
+};
+
 /**
  * Servicio para consultar y gestionar cajas chicas en el frontend.
- * Conectado a /api/v1/cajas-chicas según Postman spec.
+ * Conectado a /api/v1/cajas-chicas según Postman spec con caché inteligente en memoria.
  */
 export const pettyCashService = {
     /**
      * Consulta todas las cajas chicas asociadas a un usuario específico.
      * GET /api/v1/cajas-chicas/usuario/:usuarioId
      */
-    getByUser: async (usuarioId: string): Promise<PettyCashResponse[]> => {
+    getByUser: async (usuarioId: string, forceRefresh = false): Promise<PettyCashResponse[]> => {
+        const now = Date.now();
+        const cached = userBoxesCache.get(usuarioId);
+        if (!forceRefresh && cached && now - cached.timestamp < CACHE_TTL_MS) {
+            return cached.data;
+        }
         const response = await api.get<PettyCashResponse[]>(`/cajas-chicas/usuario/${usuarioId}`);
+        userBoxesCache.set(usuarioId, { data: response.data, timestamp: now });
         return response.data;
     },
 
@@ -67,6 +99,7 @@ export const pettyCashService = {
         projectId?: string | null;
     }): Promise<PettyCashResponse> => {
         const response = await api.post<PettyCashResponse>('/cajas-chicas', data);
+        invalidatePettyCashCache();
         return response.data;
     },
 
@@ -74,8 +107,13 @@ export const pettyCashService = {
      * Consulta todas las cajas chicas del sistema (Administrador y Contador).
      * GET /api/v1/cajas-chicas
      */
-    getAll: async (): Promise<PettyCashResponse[]> => {
+    getAll: async (forceRefresh = false): Promise<PettyCashResponse[]> => {
+        const now = Date.now();
+        if (!forceRefresh && allBoxesCache && now - allBoxesCache.timestamp < CACHE_TTL_MS) {
+            return allBoxesCache.data;
+        }
         const response = await api.get<PettyCashResponse[]>('/cajas-chicas');
+        allBoxesCache = { data: response.data, timestamp: now };
         return response.data;
     },
 
@@ -97,6 +135,7 @@ export const pettyCashService = {
         action: 'APROBAR' | 'RECHAZAR' | 'ABRIR' | 'REVISAR' | 'CERRAR' | 'LIQUIDAR',
     ): Promise<PettyCashResponse> => {
         const response = await api.patch<PettyCashResponse>(`/cajas-chicas/${id}/estado`, { action });
+        invalidatePettyCashCache();
         return response.data;
     },
 
@@ -130,6 +169,7 @@ export const pettyCashService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        invalidatePettyCashCache();
         return response.data;
     },
 
@@ -163,6 +203,7 @@ export const pettyCashService = {
         },
     ): Promise<ExpenseItemResponse> => {
         const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}/evaluar`, data);
+        invalidatePettyCashCache();
         return response.data;
     },
 
@@ -202,15 +243,21 @@ export const pettyCashService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        invalidatePettyCashCache();
         return response.data;
     },
 
     /**
-     * Consulta todos los gastos directos (sin caja chica asignada) registrados.
+     * Consulta todos los gastos directos (sin caja chica asignada) registrados con caché.
      * GET /api/v1/gastos/reembolsos-directos
      */
-    getAllDirectExpenses: async (): Promise<ExpenseItemResponse[]> => {
+    getAllDirectExpenses: async (forceRefresh = false): Promise<ExpenseItemResponse[]> => {
+        const now = Date.now();
+        if (!forceRefresh && allDirectExpensesCache && now - allDirectExpensesCache.timestamp < CACHE_TTL_MS) {
+            return allDirectExpensesCache.data;
+        }
         const response = await api.get<ExpenseItemResponse[]>('/gastos/reembolsos-directos');
+        allDirectExpensesCache = { data: response.data, timestamp: now };
         return response.data;
     },
 
@@ -224,20 +271,26 @@ export const pettyCashService = {
     },
 
     /**
-     * Consulta los reembolsos directos de un usuario específico.
+     * Consulta los reembolsos directos de un usuario específico con caché.
      * GET /api/v1/gastos/reembolsos-directos/pendientes/:usuarioId
      */
-    getPendingDirectReimbursementsByUser: async (usuarioId: string): Promise<ExpenseItemResponse[]> => {
+    getPendingDirectReimbursementsByUser: async (usuarioId: string, forceRefresh = false): Promise<ExpenseItemResponse[]> => {
+        const now = Date.now();
+        const cached = userDirectExpensesCache.get(usuarioId);
+        if (!forceRefresh && cached && now - cached.timestamp < CACHE_TTL_MS) {
+            return cached.data;
+        }
         const response = await api.get<{ expenses?: ExpenseItemResponse[]; totalOwed?: number } | ExpenseItemResponse[]>(
             `/gastos/reembolsos-directos/pendientes/${usuarioId}`
         );
+        let list: ExpenseItemResponse[] = [];
         if (response.data && 'expenses' in response.data && Array.isArray(response.data.expenses)) {
-            return response.data.expenses;
+            list = response.data.expenses;
+        } else if (Array.isArray(response.data)) {
+            list = response.data;
         }
-        if (Array.isArray(response.data)) {
-            return response.data;
-        }
-        return [];
+        userDirectExpensesCache.set(usuarioId, { data: list, timestamp: now });
+        return list;
     },
 
     /**
@@ -246,8 +299,53 @@ export const pettyCashService = {
      */
     markAsReimbursed: async (id: string): Promise<ExpenseItemResponse> => {
         const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}/reembolsar`);
+        invalidatePettyCashCache();
         return response.data;
     },
+
+    /**
+     * Obtiene sincrónicamente las cajas chicas del sistema desde la caché si son válidas (<60s).
+     */
+    getCachedAllBoxes: (): PettyCashResponse[] | null => {
+        if (allBoxesCache && Date.now() - allBoxesCache.timestamp < CACHE_TTL_MS) {
+            return allBoxesCache.data;
+        }
+        return null;
+    },
+
+    /**
+     * Obtiene sincrónicamente las cajas chicas del usuario desde la caché si son válidas (<60s).
+     */
+    getCachedUserBoxes: (usuarioId: string): PettyCashResponse[] | null => {
+        const cached = userBoxesCache.get(usuarioId);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+            return cached.data;
+        }
+        return null;
+    },
+
+    /**
+     * Obtiene sincrónicamente los gastos directos desde la caché si son válidos (<60s).
+     */
+    getCachedAllDirectExpenses: (): ExpenseItemResponse[] | null => {
+        if (allDirectExpensesCache && Date.now() - allDirectExpensesCache.timestamp < CACHE_TTL_MS) {
+            return allDirectExpensesCache.data;
+        }
+        return null;
+    },
+
+    /**
+     * Obtiene sincrónicamente los gastos directos del usuario desde la caché si son válidos (<60s).
+     */
+    getCachedUserDirectExpenses: (usuarioId: string): ExpenseItemResponse[] | null => {
+        const cached = userDirectExpensesCache.get(usuarioId);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+            return cached.data;
+        }
+        return null;
+    },
+
+    invalidateCache: invalidatePettyCashCache,
 };
 
 export interface DirectReimbursementUser {

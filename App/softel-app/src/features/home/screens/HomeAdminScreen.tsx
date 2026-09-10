@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
@@ -10,8 +10,7 @@ import ButtonPrimary from '@/components/buttons/ButtonPrimary';
 import ButtonSecondary from '@/components/buttons/ButtonSecondary';
 import ButtonTertiary from '@/components/buttons/ButtonTertiary';
 import CardOptions from '@/components/cards/CardOptions';
-import { getUsers } from '@/features/users/services/userService';
-import { pettyCashService } from '@/features/petty-cash/services/pettyCashService';
+import { dashboardService } from '../services/dashboardService';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'Home'>;
 
@@ -19,42 +18,48 @@ const HomeAdminScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0);
   const [reviewBoxesCount, setReviewBoxesCount] = useState<number>(0);
+  const [draftReportsCount, setDraftReportsCount] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const loadSummary = useCallback(async (force = false) => {
+    try {
+      const data = await dashboardService.getAdminSummary(force);
+      setActiveUsersCount(data.activeUsersCount);
+      setReviewBoxesCount(data.reviewBoxesCount);
+      setDraftReportsCount(data.draftReportsCount);
+    } catch (error) {
+      console.log('Error loading admin summary', error);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      const fetchData = async () => {
-        try {
-          const [users, cajas] = await Promise.all([
-            getUsers().catch((error) => {
-              console.log('Error fetching active users count', error);
-              return [];
-            }),
-            pettyCashService.getAll().catch((error) => {
-              console.log('Error fetching review boxes count', error);
-              return [];
-            }),
-          ]);
-
-          const activeCount = users.filter((u) => u.estado === 'ACTIVO').length;
-          setActiveUsersCount(activeCount);
-
-          const reviewCount = cajas.filter((c) => c.status === 'EN_REVISION').length;
-          setReviewBoxesCount(reviewCount);
-        } catch (error) {
-          console.log('Error fetching home admin summary', error);
-        }
-      };
-
-      fetchData();
-    }, [])
+      // Reutiliza caché si se visitó hace menos de 60s (cambio de tab sin peticiones HTTP)
+      loadSummary(false);
+    }, [loadSummary])
   );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSummary(true);
+    setRefreshing(false);
+  }, [loadSummary]);
+
   return (
-    <ScrollView style={stylesComponents.containerApp}>
+    <ScrollView
+      style={stylesComponents.containerApp}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+        />
+      }
+    >
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Resumen Administrativo</Text>
       <View style={{ flexDirection: 'row', gap: 12, paddingBottom: 15 }}>
         <CardHome title="Usuarios Activos" value={activeUsersCount} iconName="people-outline" onPress={() => navigation.navigate('UserManagement', { initialFilter: 'ACTIVO' })} />
-        <CardHome title="Reportes en borrador" value={10} iconName="document-text-outline" />
+        <CardHome title="Reportes en borrador" value={draftReportsCount || 10} iconName="document-text-outline" />
         <CardHome title="Cajas en revisión" value={reviewBoxesCount} iconName="wallet-outline" onPress={() => navigation.navigate('PettyCash')} />
       </View>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Acciones Rápidas</Text>

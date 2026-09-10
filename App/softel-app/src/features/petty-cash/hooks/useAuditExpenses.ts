@@ -76,8 +76,19 @@ export const useAuditExpenses = (
 ) => {
     const usuario = useAuthStore((state) => state.usuario);
     const [cajaStatus, setCajaStatus] = useState<string | undefined>(initialCajaStatus);
-    const [expenses, setExpenses] = useState<AuditExpenseData[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    // Inicialización instantánea desde caché en memoria para gastos directos si existe
+    const cachedDirect = isDirectOnly
+        ? (isAdmin
+            ? pettyCashService.getCachedAllDirectExpenses()
+            : usuario?.id
+            ? pettyCashService.getCachedUserDirectExpenses(usuario.id)
+            : null)
+        : null;
+
+    const [expenses, setExpenses] = useState<AuditExpenseData[]>(
+        cachedDirect ? cachedDirect.map((e) => mapBackendExpenseToAuditData(e, true)) : []
+    );
+    const [loading, setLoading] = useState<boolean>(!cachedDirect);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -100,15 +111,15 @@ export const useAuditExpenses = (
     /**
      * Carga los gastos desde el backend según la cajaId, reembolsos directos o bandeja general.
      */
-    const fetchExpenses = useCallback(async (isRefresh = false) => {
-        if (!isRefresh) setLoading(true);
+    const fetchExpenses = useCallback(async (isRefresh = false, forceNetwork = false) => {
+        if (!isRefresh && !expenses.length) setLoading(true);
         try {
             if (isDirectOnly) {
                 let rawExpenses: ExpenseItemResponse[] = [];
                 if (isAdmin) {
-                    rawExpenses = await pettyCashService.getAllDirectExpenses();
+                    rawExpenses = await pettyCashService.getAllDirectExpenses(forceNetwork || isRefresh);
                 } else if (usuario?.id) {
-                    rawExpenses = await pettyCashService.getPendingDirectReimbursementsByUser(usuario.id);
+                    rawExpenses = await pettyCashService.getPendingDirectReimbursementsByUser(usuario.id, forceNetwork || isRefresh);
                 }
                 const mapped = (rawExpenses || []).map((e) => mapBackendExpenseToAuditData(e, true));
                 setExpenses(mapped);
@@ -140,7 +151,7 @@ export const useAuditExpenses = (
             setLoading(false);
             setRefreshing(false);
         }
-    }, [cajaId, isAdmin, isDirectOnly, usuario?.id]);
+    }, [cajaId, isAdmin, isDirectOnly, usuario?.id, expenses.length]);
 
     useEffect(() => {
         fetchExpenses();
@@ -148,7 +159,7 @@ export const useAuditExpenses = (
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
-        fetchExpenses(true);
+        fetchExpenses(true, true);
     }, [fetchExpenses]);
 
     /**
@@ -368,6 +379,7 @@ export const useAuditExpenses = (
         isCajaLiquidada,
         isCajaCerrada,
         isCajaCongelada,
+        fetchExpenses,
         handleRefresh,
         handleAprobar,
         handleObservar,

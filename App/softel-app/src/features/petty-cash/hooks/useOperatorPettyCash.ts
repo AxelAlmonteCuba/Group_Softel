@@ -9,6 +9,46 @@ import { pettyCashService, PettyCashResponse } from '../services/pettyCashServic
 
 export type OperatorTab = 'caja' | 'reembolsos';
 
+// Función auxiliar para formatear cajas en proceso e históricas
+const parseOperatorBoxes = (data: PettyCashResponse[]) => {
+    const enProceso = data.find(
+        (c) => c.status !== 'CERRADA' && c.status !== 'LIQUIDADA' && c.status !== 'RECHAZADA'
+    ) ?? null;
+
+    const cerradas = data.filter(
+        (c) => c.status === 'CERRADA' || c.status === 'LIQUIDADA' || c.status === 'RECHAZADA'
+    );
+
+    const transformedHistory: HistoryPettyCashItem[] = cerradas.map((c) => {
+        const fondo = Number(c.assignedAmount) || 0;
+        const saldoActual = Number(c.currentBalance) || 0;
+        const gastadoCalculado = Math.max(0, fondo - saldoActual);
+        const devueltoCalculado = Math.max(0, saldoActual);
+
+        const fechaAperturaFmt = c.openingDate
+            ? new Date(c.openingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+            : new Date(c.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+        const fechaCierreFmt = c.closingDate
+            ? new Date(c.closingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+            : 'En curso';
+
+        return {
+            id: c.id,
+            codigo: `HCC-${c.id.substring(0, 4).toUpperCase()}`,
+            obraOProyecto: c.justification || 'Operación General',
+            fechaInicio: fechaAperturaFmt,
+            fechaFin: fechaCierreFmt,
+            estado: c.status,
+            fondoBase: fondo,
+            gastado: gastadoCalculado,
+            devuelto: devueltoCalculado,
+            comprobantesCount: c.approvedExpensesCount || 0,
+        };
+    });
+
+    return { enProceso, transformedHistory };
+};
+
 /**
  * Hook personalizado que encapsula el estado, carga de caja chica activa,
  * historial de cajas finalizadas y rendición de reembolsos directos para supervisores y operarios.
@@ -18,10 +58,15 @@ export const useOperatorPettyCash = () => {
 
     const [selectedTab, setSelectedTab] = useState<OperatorTab>('caja');
     const [selectedExpenseFilter, setSelectedExpenseFilter] = useState<string>('TODOS');
-    const [loading, setLoading] = useState(true);
-    const [refreshingCajas, setRefreshingCajas] = useState(false);
-    const [cajaEnProceso, setCajaEnProceso] = useState<PettyCashResponse | null>(null);
-    const [historyCajas, setHistoryCajas] = useState<HistoryPettyCashItem[]>([]);
+
+    // Inicialización instantánea desde caché en memoria si existe
+    const cachedBoxes = usuario?.id ? pettyCashService.getCachedUserBoxes(usuario.id) : null;
+    const initialParsed = cachedBoxes ? parseOperatorBoxes(cachedBoxes) : null;
+
+    const [loading, setLoading] = useState<boolean>(!initialParsed);
+    const [refreshingCajas, setRefreshingCajas] = useState<boolean>(false);
+    const [cajaEnProceso, setCajaEnProceso] = useState<PettyCashResponse | null>(initialParsed?.enProceso ?? null);
+    const [historyCajas, setHistoryCajas] = useState<HistoryPettyCashItem[]>(initialParsed?.transformedHistory ?? []);
 
     // Hook para reembolsos directos del usuario (modo consulta personal)
     const directExpenses = useAuditExpenses(undefined, false, undefined, true);
@@ -95,72 +140,33 @@ export const useOperatorPettyCash = () => {
     }, [directExpenses.expenses, selectedExpenseFilter]);
 
     // Consulta y formateo de cajas asignadas al usuario
-    const fetchCajas = useCallback(async () => {
+    const fetchCajas = useCallback(async (force = false) => {
         if (!usuario?.id) return;
         try {
-            setLoading(true);
-            const data = await pettyCashService.getByUser(usuario.id);
-
-            // 1. Verificar si existe alguna caja en proceso (cualquier estado menos CERRADA, LIQUIDADA o RECHAZADA)
-            const enProceso = data.find(
-                (c) => c.status !== 'CERRADA' && c.status !== 'LIQUIDADA' && c.status !== 'RECHAZADA'
-            ) ?? null;
+            const data = await pettyCashService.getByUser(usuario.id, force);
+            const { enProceso, transformedHistory } = parseOperatorBoxes(data);
             setCajaEnProceso(enProceso);
-
-            // 2. Filtrar solo cajas finalizadas o históricas para la sección de historial
-            const cerradas = data.filter(
-                (c) => c.status === 'CERRADA' || c.status === 'LIQUIDADA' || c.status === 'RECHAZADA'
-            );
-
-            // Transformar al formato HistoryPettyCashItem
-            const transformedHistory: HistoryPettyCashItem[] = cerradas.map((c) => {
-                const fondo = Number(c.assignedAmount) || 0;
-                const saldoActual = Number(c.currentBalance) || 0;
-                const gastadoCalculado = Math.max(0, fondo - saldoActual);
-                const devueltoCalculado = Math.max(0, saldoActual);
-
-                const fechaAperturaFmt = c.openingDate
-                    ? new Date(c.openingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : new Date(c.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
-                const fechaCierreFmt = c.closingDate
-                    ? new Date(c.closingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : 'En curso';
-
-                return {
-                    id: c.id,
-                    codigo: `HCC-${c.id.substring(0, 4).toUpperCase()}`,
-                    obraOProyecto: c.justification || 'Operación General',
-                    fechaInicio: fechaAperturaFmt,
-                    fechaFin: fechaCierreFmt,
-                    estado: c.status,
-                    fondoBase: fondo,
-                    gastado: gastadoCalculado,
-                    devuelto: devueltoCalculado,
-                    comprobantesCount: 0,
-                };
-            });
-
             setHistoryCajas(transformedHistory);
         } catch (error) {
             console.log('Error al consultar cajas chicas del usuario:', error);
-            setHistoryCajas([]);
+            if (force) setHistoryCajas([]);
         } finally {
             setLoading(false);
         }
     }, [usuario?.id]);
 
-    // Recargar datos al enfocar la pantalla
+    // Recargar datos al enfocar la pantalla reutilizando caché (<60s)
     useFocusEffect(
         useCallback(() => {
-            fetchCajas();
-            directExpenses.handleRefresh();
-        }, [fetchCajas, directExpenses.handleRefresh])
+            fetchCajas(false);
+            directExpenses.fetchExpenses(false, false);
+        }, [fetchCajas, directExpenses])
     );
 
     const handleRefresh = useCallback(() => {
         if (selectedTab === 'caja') {
             setRefreshingCajas(true);
-            fetchCajas().finally(() => setRefreshingCajas(false));
+            fetchCajas(true).finally(() => setRefreshingCajas(false));
         } else {
             directExpenses.handleRefresh();
         }

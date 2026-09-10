@@ -239,8 +239,8 @@ export class PettyCashService {
    */
   private async getExpenseSumsForPettyCashIds(
     pettyCashIds: string[],
-  ): Promise<Map<string, { pendingAmount: number; approvedAmount: number }>> {
-    const map = new Map<string, { pendingAmount: number; approvedAmount: number }>();
+  ): Promise<Map<string, { pendingAmount: number; approvedAmount: number; approvedCount: number; totalCount: number }>> {
+    const map = new Map<string, { pendingAmount: number; approvedAmount: number; approvedCount: number; totalCount: number }>();
     if (!pettyCashIds || pettyCashIds.length === 0) {
       return map;
     }
@@ -256,6 +256,14 @@ export class PettyCashService {
         "COALESCE(SUM(CASE WHEN gasto.status = 'APROBADO' THEN gasto.amount ELSE 0 END), 0)",
         'approved',
       )
+      .addSelect(
+        "COALESCE(COUNT(CASE WHEN gasto.status = 'APROBADO' THEN 1 ELSE NULL END), 0)",
+        'approvedCount',
+      )
+      .addSelect(
+        "COUNT(gasto.id)",
+        'totalCount',
+      )
       .where('gasto.pettyCashId IN (:...pettyCashIds)', { pettyCashIds })
       .groupBy('gasto.pettyCashId')
       .getRawMany();
@@ -264,6 +272,8 @@ export class PettyCashService {
       map.set(r.pettyCashId, {
         pendingAmount: Number(r.pending || 0),
         approvedAmount: Number(r.approved || 0),
+        approvedCount: Number(r.approvedCount || 0),
+        totalCount: Number(r.totalCount || 0),
       });
     }
 
@@ -286,7 +296,7 @@ export class PettyCashService {
     const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
 
     return list.map((pc) => {
-      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0 };
+      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
       const currentBalance = Number(pc.currentBalance);
       const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -298,6 +308,8 @@ export class PettyCashService {
         approvedAmount: sums.approvedAmount,
         pendingAmount: sums.pendingAmount,
         effectiveBalance: effectiveBalance,
+        approvedExpensesCount: sums.approvedCount,
+        totalExpensesCount: sums.totalCount,
         status: pc.status,
         justification: pc.justification,
         projectId: pc.projectId,
@@ -341,7 +353,7 @@ export class PettyCashService {
     const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
 
     return list.map((pc) => {
-      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0 };
+      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
       const currentBalance = Number(pc.currentBalance);
       const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -353,6 +365,8 @@ export class PettyCashService {
         approvedAmount: sums.approvedAmount,
         pendingAmount: sums.pendingAmount,
         effectiveBalance: effectiveBalance,
+        approvedExpensesCount: sums.approvedCount,
+        totalExpensesCount: sums.totalCount,
         status: pc.status,
         justification: pc.justification,
         projectId: pc.projectId,
@@ -396,7 +410,7 @@ export class PettyCashService {
     }
 
     const sumsMap = await this.getExpenseSumsForPettyCashIds([id]);
-    const sums = sumsMap.get(id) || { pendingAmount: 0, approvedAmount: 0 };
+    const sums = sumsMap.get(id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
     const currentBalance = Number(pc.currentBalance);
     const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -408,6 +422,8 @@ export class PettyCashService {
       approvedAmount: sums.approvedAmount,
       pendingAmount: sums.pendingAmount,
       effectiveBalance: effectiveBalance,
+      approvedExpensesCount: sums.approvedCount,
+      totalExpensesCount: sums.totalCount,
       status: pc.status,
       justification: pc.justification,
       projectId: pc.projectId,

@@ -14,8 +14,8 @@ const HomeScreen = () => {
   const usuario = useAuthStore((state) => state.usuario);
   const [activeTab, setActiveTab] = useState<BottomTabKey>('inicio');
 
-  // Filtro por rol: ADMINISTRADOR ve HomeAdminScreen; SUPERVISOR y TRABAJADOR ven HomeOperatorScreen
-  const isAdmin = usuario?.rol === 'ADMINISTRADOR';
+  // Filtro por rol: ADMINISTRADOR y CONTADOR ven HomeAdminScreen; SUPERVISOR y TRABAJADOR ven HomeOperatorScreen
+  const isAdmin = usuario?.rol === 'ADMINISTRADOR' || usuario?.rol === 'CONTADOR';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: stylesComponents.containerLogin.backgroundColor }}>
