@@ -11,6 +11,8 @@ import CardDetailPettyCash from '@/components/cards/CardDetailPettyCash';
 import CardAmountsPettyCash from '@/components/cards/CardAmountsPettyCash';
 import CardRenderedExpenses from '@/components/cards/CardRenderedExpenses';
 import PettyCashActionButton from '@/components/buttons/PettyCashActionButton';
+import ButtonOutline from '@/components/buttons/ButtonOutline';
+import { usePettyCashActions } from '../hooks/usePettyCashActions';
 import { pettyCashService, PettyCashResponse, ExpenseItemResponse } from '../services/pettyCashService';
 import { useAuthStore } from '@/store/authStore';
 
@@ -121,6 +123,15 @@ const PettyCashDetailScreen: React.FC = () => {
     const cajaActiva = caja || defaultCaja;
     const expensesList = cajaId ? expenses : defaultExpenses;
 
+    const {
+        secondaryActionConfig,
+        actionLoading,
+        executeAction,
+    } = usePettyCashActions({
+        caja: cajaActiva,
+        onStatusUpdated: (updated) => setCaja(updated),
+    });
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Cabecera de navegación */}
@@ -146,6 +157,18 @@ const PettyCashDetailScreen: React.FC = () => {
 
                         {/* 2. Tarjeta con datos de montos y barra de progreso */}
                         <CardAmountsPettyCash caja={cajaActiva} />
+
+                        {/* Botón Outline: Finalizar y Enviar a Revisión encima de Comprobantes Rendidos */}
+                        {secondaryActionConfig && (
+                            <View style={{ marginTop: 14, marginBottom: 4 }}>
+                                <ButtonOutline
+                                    text={secondaryActionConfig.label}
+                                    iconName={secondaryActionConfig.icon}
+                                    onPress={() => executeAction(secondaryActionConfig)}
+                                    loading={actionLoading}
+                                />
+                            </View>
+                        )}
 
                         {/* 3. Bloque de Comprobantes Rendidos (HomeOperatorScreen) */}
                         <CardRenderedExpenses
@@ -175,15 +198,17 @@ const PettyCashDetailScreen: React.FC = () => {
                                 }
                             }}
                         />
-
-                        {/* 4. Botón de Acción según el ciclo de vida (Lógica aislada) */}
-                        <PettyCashActionButton
-                            caja={cajaActiva}
-                            onStatusUpdated={(updated) => setCaja(updated)}
-                        />
                     </View>
                 )}
             </ScrollView>
+
+            {/* 4. Botón de Acción estático en la parte inferior */}
+            {!loading && (
+                <PettyCashActionButton
+                    caja={cajaActiva}
+                    onStatusUpdated={(updated) => setCaja(updated)}
+                />
+            )}
         </SafeAreaView>
     );
 };

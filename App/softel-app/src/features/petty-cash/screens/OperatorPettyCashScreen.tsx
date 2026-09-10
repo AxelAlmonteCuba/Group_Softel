@@ -1,17 +1,21 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
-import { useAuthStore } from '@/store/authStore';
 
 import HeaderBar from '@/components/layout/HeaderBar';
+import EmptyState from '@/components/common/EmptyState';
 import CardEmptyPettyCash from '@/components/cards/CardEmptyPettyCash';
 import CardActivePettyCash from '@/components/cards/CardActivePettyCash';
 import CardHistoryPettyCash, { HistoryPettyCashItem } from '@/components/cards/CardHistoryPettyCash';
-import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
+import CardAuditExpense from '@/components/cards/CardAuditExpense';
+import PhotoPreviewModal from '@/components/modals/PhotoPreviewModal';
+import SegmentedDualButton from '@/components/buttons/SegmentedDualButton';
+import FilterChips from '@/components/inputs/FilterChips';
+import { useOperatorPettyCash, OperatorTab } from '../hooks/useOperatorPettyCash';
 
 interface Props {
     onBack?: () => void;
@@ -21,79 +25,26 @@ interface Props {
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 /**
- * Pantalla para "Mi Caja Chica" (Supervisor y Trabajador).
- * Conectada al backend: verifica si el usuario tiene caja abierta y muestra condicionalmente
- * la tarjeta de solicitud o el aviso de caja abierta.
- * El historial solo se visualiza si el usuario tiene cajas anteriores registradas.
+ * Pantalla para "Mi Caja Chica" y "Mis Reembolsos Directos" (Supervisor y Trabajador).
+ * Toda la lógica de consulta, filtros reactivos, historial y estados se delega al hook useOperatorPettyCash.
  */
 const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) => {
     const navigation = useNavigation<NavigationProp>();
-    const usuario = useAuthStore((state) => state.usuario);
-    const [loading, setLoading] = useState(true);
-    const [cajaEnProceso, setCajaEnProceso] = useState<PettyCashResponse | null>(null);
-    const [historyCajas, setHistoryCajas] = useState<HistoryPettyCashItem[]>([]);
-
-    const fetchCajas = useCallback(async () => {
-        if (!usuario?.id) return;
-        try {
-            setLoading(true);
-            const data = await pettyCashService.getByUser(usuario.id);
-
-            // 1. Verificar si existe alguna caja en proceso (cualquier estado menos CERRADA, LIQUIDADA o RECHAZADA)
-            // Estados activos/en proceso: SOLICITADA, APROBADA, ABIERTA, EN_REVISION
-            const enProceso = data.find(
-                (c) => c.status !== 'CERRADA' && c.status !== 'LIQUIDADA' && c.status !== 'RECHAZADA'
-            ) ?? null;
-            setCajaEnProceso(enProceso);
-
-            // 2. Filtrar solo cajas finalizadas o históricas para la sección de historial
-            // Cajas finalizadas/pasadas: CERRADA, LIQUIDADA, RECHAZADA
-            const cerradas = data.filter(
-                (c) => c.status === 'CERRADA' || c.status === 'LIQUIDADA' || c.status === 'RECHAZADA'
-            );
-
-            // Transformar al formato HistoryPettyCashItem
-            const transformedHistory: HistoryPettyCashItem[] = cerradas.map((c) => {
-                const fondo = Number(c.assignedAmount) || 0;
-                const saldoActual = Number(c.currentBalance) || 0;
-                const gastadoCalculado = Math.max(0, fondo - saldoActual);
-                const devueltoCalculado = Math.max(0, saldoActual);
-
-                const fechaAperturaFmt = c.openingDate
-                    ? new Date(c.openingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : new Date(c.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
-                const fechaCierreFmt = c.closingDate
-                    ? new Date(c.closingDate).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : 'En curso';
-
-                return {
-                    id: c.id,
-                    codigo: `HCC-${c.id.substring(0, 4).toUpperCase()}`,
-                    obraOProyecto: c.justification || 'Operación General',
-                    fechaInicio: fechaAperturaFmt,
-                    fechaFin: fechaCierreFmt,
-                    estado: c.status,
-                    fondoBase: fondo,
-                    gastado: gastadoCalculado,
-                    devuelto: devueltoCalculado,
-                    comprobantesCount: 0,
-                };
-            });
-
-            setHistoryCajas(transformedHistory);
-        } catch (error) {
-            console.log('Error al consultar cajas chicas del usuario:', error);
-            setHistoryCajas([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [usuario?.id]);
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchCajas();
-        }, [fetchCajas])
-    );
+    const {
+        selectedTab,
+        setSelectedTab,
+        selectedExpenseFilter,
+        setSelectedExpenseFilter,
+        loading,
+        isRefreshing,
+        cajaEnProceso,
+        historyCajas,
+        totalReembolsos,
+        filterOptionsReembolsos,
+        filteredReembolsos,
+        directExpenses,
+        handleRefresh,
+    } = useOperatorPettyCash();
 
     const handleSolicitarApertura = () => {
         navigation.navigate('RequestPettyCash');
@@ -107,84 +58,170 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Cabecera limpia estándar reutilizable */}
             <HeaderBar
-                title="Mi Caja Chica"
+                title={selectedTab === 'caja' ? 'Mi Caja Chica' : 'Mis Reembolsos Directos'}
                 onBack={onBack}
-                rightIcon="time-outline"
-                onRightPress={onHistoryPress}
+                rightIcon={selectedTab === 'caja' ? 'time-outline' : undefined}
+                onRightPress={selectedTab === 'caja' ? onHistoryPress : undefined}
             />
 
-            {/* Contenido de la pantalla */}
-            <ScrollView style={stylesComponents.containerApp} showsVerticalScrollIndicator={false}>
-                {/* 1. Validación de Caja en Proceso */}
-                {loading ? (
-                    <View style={{ paddingVertical: 32, alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                ) : cajaEnProceso ? (
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
-                        style={{ marginTop: 4, marginBottom: 12 }}
-                    >
-                        <CardActivePettyCash caja={cajaEnProceso} />
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ marginTop: 4, marginBottom: 24 }}>
-                        <CardEmptyPettyCash onPressRequest={handleSolicitarApertura} />
-                    </View>
-                )}
+            {/* Selector dual superior */}
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 }}>
+                <SegmentedDualButton<OperatorTab>
+                    options={[
+                        {
+                            value: 'caja',
+                            label: 'Caja Chica',
+                            iconName: 'wallet-outline',
+                            count: cajaEnProceso ? 1 : 0,
+                        },
+                        {
+                            value: 'reembolsos',
+                            label: 'Reembolsos Directos',
+                            iconName: 'document-text-outline',
+                            count: totalReembolsos,
+                            countOnNewLine: true,
+                        },
+                    ]}
+                    selectedValue={selectedTab}
+                    onSelect={setSelectedTab}
+                    variant="capsule"
+                />
+            </View>
 
-                {/* 2. Cabecera y Lista de Historial: SOLO se muestran si existen cajas pasadas */}
-                {historyCajas.length > 0 && (
+            {/* Chips de filtrado estandarizados (solo en pestaña Reembolsos Directos) */}
+            {selectedTab === 'reembolsos' && (
+                <View style={{ marginBottom: 6 }}>
+                    <FilterChips
+                        options={filterOptionsReembolsos}
+                        selectedValue={selectedExpenseFilter}
+                        onSelect={setSelectedExpenseFilter}
+                    />
+                </View>
+            )}
+
+            {/* Contenido de la pantalla */}
+            <ScrollView
+                style={stylesComponents.containerApp}
+                contentContainerStyle={{ paddingBottom: 32 }}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        colors={[colors.primary]}
+                    />
+                }
+            >
+                {selectedTab === 'caja' ? (
                     <>
-                        <View
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: 14,
-                                paddingHorizontal: 2,
-                            }}
-                        >
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={[stylesTexts.textCardOptionTitle, { fontSize: 17, marginBottom: 0 }]}>
-                                    Historial de Cajas Asignadas
-                                </Text>
+                        {/* 1. Validación de Caja en Proceso */}
+                        {loading ? (
+                            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            </View>
+                        ) : cajaEnProceso ? (
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
+                                style={{ marginTop: 4, marginBottom: 12 }}
+                            >
+                                <CardActivePettyCash caja={cajaEnProceso} />
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={{ marginTop: 4, marginBottom: 24 }}>
+                                <CardEmptyPettyCash onPressRequest={handleSolicitarApertura} />
+                            </View>
+                        )}
+
+                        {/* 2. Cabecera y Lista de Historial: SOLO se muestran si existen cajas pasadas */}
+                        {historyCajas.length > 0 && (
+                            <>
                                 <View
                                     style={{
-                                        backgroundColor: colors.border,
-                                        paddingHorizontal: 8,
-                                        paddingVertical: 2,
-                                        borderRadius: 12,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: 14,
+                                        paddingHorizontal: 2,
                                     }}
                                 >
-                                    <Text style={[stylesTexts.litleTitle, { fontSize: 11, marginBottom: 0, color: colors.textPrimary }]}>
-                                        {historyCajas.length}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <Text style={[stylesTexts.textCardOptionTitle, { fontSize: 17, marginBottom: 0 }]}>
+                                            Historial de Cajas Asignadas
+                                        </Text>
+                                        <View
+                                            style={{
+                                                backgroundColor: colors.border,
+                                                paddingHorizontal: 8,
+                                                paddingVertical: 2,
+                                                borderRadius: 12,
+                                            }}
+                                        >
+                                            <Text style={[stylesTexts.litleTitle, { fontSize: 11, marginBottom: 0, color: colors.textPrimary }]}>
+                                                {historyCajas.length}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <Text style={[stylesTexts.cardProfileRole, { fontSize: 15, marginBottom: 0 }]}>
+                                        2026
                                     </Text>
                                 </View>
-                            </View>
 
-                            <Text style={[stylesTexts.cardProfileRole, { fontSize: 15, marginBottom: 0 }]}>
-                                2026
-                            </Text>
-                        </View>
-
-                        {/* Lista de Tarjetas de Historial */}
-                        {historyCajas.map((caja) => (
-                            <CardHistoryPettyCash
-                                key={caja.id}
-                                data={caja}
-                                onPressDetail={handlePressDetail}
-                            />
-                        ))}
+                                {/* Lista de Tarjetas de Historial */}
+                                {historyCajas.map((caja) => (
+                                    <CardHistoryPettyCash
+                                        key={caja.id}
+                                        data={caja}
+                                        onPressDetail={handlePressDetail}
+                                    />
+                                ))}
+                            </>
+                        )}
                     </>
+                ) : (
+                    /* Pestaña: Mis Reembolsos Directos */
+                    directExpenses.loading ? (
+                        <View style={{ paddingVertical: 48, alignItems: 'center', justifyContent: 'center' }}>
+                            <ActivityIndicator size="small" color={colors.primary} />
+                        </View>
+                    ) : filteredReembolsos.length === 0 ? (
+                        <EmptyState
+                            iconName="folder-open-outline"
+                            title="No hay reembolsos en este estado"
+                            description={
+                                totalReembolsos === 0
+                                    ? 'Los gastos que registres sin caja chica asignada aparecerán aquí para su seguimiento y liquidación.'
+                                    : 'Selecciona otro filtro para ver tus comprobantes registrados.'
+                            }
+                        />
+                    ) : (
+                        <View style={{ marginTop: 2 }}>
+                            {filteredReembolsos.map((gasto) => (
+                                <CardAuditExpense
+                                    key={gasto.id}
+                                    gasto={gasto}
+                                    esAdmin={false}
+                                    bloqueado={false}
+                                    loading={directExpenses.actionLoadingId === gasto.id}
+                                    onVerFoto={directExpenses.handleVerFoto}
+                                />
+                            ))}
+                        </View>
+                    )
                 )}
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            {/* Modal de Previsualización de Foto */}
+            <PhotoPreviewModal
+                visible={!!directExpenses.previewImage}
+                imageUrl={directExpenses.previewImage}
+                onClose={directExpenses.closePreview}
+            />
         </View>
     );
 };
 
 export default OperatorPettyCashScreen;
-

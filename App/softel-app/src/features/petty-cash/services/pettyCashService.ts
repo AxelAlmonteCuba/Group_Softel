@@ -204,7 +204,58 @@ export const pettyCashService = {
         });
         return response.data;
     },
+
+    /**
+     * Consulta todos los gastos directos (sin caja chica asignada) registrados.
+     * GET /api/v1/gastos/reembolsos-directos
+     */
+    getAllDirectExpenses: async (): Promise<ExpenseItemResponse[]> => {
+        const response = await api.get<ExpenseItemResponse[]>('/gastos/reembolsos-directos');
+        return response.data;
+    },
+
+    /**
+     * Consulta los colaboradores que cuentan con reembolsos directos (deuda de la empresa).
+     * GET /api/v1/gastos/reembolsos-directos/usuarios-con-deuda
+     */
+    getDirectReimbursementsUsers: async (): Promise<DirectReimbursementUser[]> => {
+        const response = await api.get<DirectReimbursementUser[]>('/gastos/reembolsos-directos/usuarios-con-deuda');
+        return response.data;
+    },
+
+    /**
+     * Consulta los reembolsos directos de un usuario específico.
+     * GET /api/v1/gastos/reembolsos-directos/pendientes/:usuarioId
+     */
+    getPendingDirectReimbursementsByUser: async (usuarioId: string): Promise<ExpenseItemResponse[]> => {
+        const response = await api.get<{ expenses?: ExpenseItemResponse[]; totalOwed?: number } | ExpenseItemResponse[]>(
+            `/gastos/reembolsos-directos/pendientes/${usuarioId}`
+        );
+        if (response.data && 'expenses' in response.data && Array.isArray(response.data.expenses)) {
+            return response.data.expenses;
+        }
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+        return [];
+    },
+
+    /**
+     * Marca un gasto directo como reembolsado (pagado).
+     * PATCH /api/v1/gastos/:id/reembolsar
+     */
+    markAsReimbursed: async (id: string): Promise<ExpenseItemResponse> => {
+        const response = await api.patch<ExpenseItemResponse>(`/gastos/${id}/reembolsar`);
+        return response.data;
+    },
 };
+
+export interface DirectReimbursementUser {
+    userId: string;
+    userNames: string;
+    document: string;
+    totalOwed: number;
+}
 
 export interface UpdateExpenseData {
     categoryId?: number;
@@ -242,6 +293,12 @@ export interface ExpenseItemResponse {
     reason: string;
     receiptUrl: string;
     status: 'APROBADO' | 'PENDIENTE' | 'RECHAZADO' | 'OBSERVADO' | string;
+    isReimbursed?: boolean;
+    pettyCashId?: string | null;
+    pettyCash?: {
+        id: string;
+        status?: string;
+    } | null;
     evaluationComment?: string | null;
     expenseDate: string;
     createdAt: string;

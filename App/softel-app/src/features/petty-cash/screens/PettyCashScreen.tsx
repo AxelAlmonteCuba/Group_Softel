@@ -38,7 +38,7 @@ const PettyCashScreen: React.FC<Props> = ({ onBack }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            {userRole === 'ADMINISTRADOR' ? (
+            {userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR' ? (
                 <AdminPettyCashScreen onBack={handleBack} />
             ) : (
                 <OperatorPettyCashScreen onBack={handleBack} />

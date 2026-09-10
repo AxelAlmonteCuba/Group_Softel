@@ -13,15 +13,18 @@ export interface PettyCashActionButtonProps {
 }
 
 /**
- * Botón de Acción Dinámica para el ciclo de vida de la Caja Chica.
- * Utiliza el hook usePettyCashActions para aislar la lógica del diseño.
+ * Botón de Acción Principal estático en el footer inferior (ej. Registrar Gasto, Pasar a Revisión, Cerrar, Liquidar).
  */
 const PettyCashActionButton: React.FC<PettyCashActionButtonProps> = ({
     caja,
     onStatusUpdated,
     containerStyle,
 }) => {
-    const { actionConfig, actionLoading, executeAction } = usePettyCashActions({
+    const {
+        actionConfig,
+        actionLoading,
+        executeAction,
+    } = usePettyCashActions({
         caja,
         onStatusUpdated,
     });
@@ -29,7 +32,17 @@ const PettyCashActionButton: React.FC<PettyCashActionButtonProps> = ({
     if (!actionConfig) return null;
 
     return (
-        <View style={[{ marginTop: 16 }, containerStyle]}>
+        <View
+            style={[
+                {
+                    paddingHorizontal: 14,
+                    paddingTop: 8,
+                    paddingBottom: 12,
+                    backgroundColor: colors.background,
+                },
+                containerStyle,
+            ]}
+        >
             <TouchableOpacity
                 style={[
                     stylesComponents.buttonPrimary,
@@ -40,7 +53,7 @@ const PettyCashActionButton: React.FC<PettyCashActionButtonProps> = ({
                         gap: 8,
                     },
                 ]}
-                onPress={executeAction}
+                onPress={() => executeAction(actionConfig)}
                 activeOpacity={0.8}
                 disabled={actionLoading}
             >

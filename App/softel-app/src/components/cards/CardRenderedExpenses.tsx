@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
-import { stylesTexts } from '@/theme/styles';
+import { stylesComponents, stylesTexts } from '@/theme/styles';
 import CardOptions from './CardOptions';
 import { ExpenseItemResponse } from '@/features/petty-cash/services/pettyCashService';
 
@@ -55,6 +55,7 @@ const formatExpenseDate = (dateStr?: string): string => {
 /**
  * Componente que muestra el bloque de "Comprobantes Rendidos" con sus estados y montos,
  * reutilizando el patrón y componentes del Home (CardOptions en contenedor surface).
+ * Todos los estilos se extraen y consumen desde el sistema de diseño centralizado (stylesComponents y stylesTexts).
  */
 const CardRenderedExpenses: React.FC<CardRenderedExpensesProps> = ({
     expenses = [],
@@ -65,31 +66,15 @@ const CardRenderedExpenses: React.FC<CardRenderedExpensesProps> = ({
     const count = totalCount !== undefined ? totalCount : expenses.length;
 
     return (
-        <View style={{ marginBottom: 16 }}>
+        <View style={stylesComponents.renderedExpensesContainer}>
             {/* Cabecera: Título con contador y enlace "Ver todos >" */}
-            <View
-                style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 12,
-                    marginTop: 8,
-                }}
-            >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={stylesTexts.titleHome}>Comprobantes Rendidos</Text>
-                    <View
-                        style={{
-                            backgroundColor: '#E4E4E7',
-                            borderRadius: 12,
-                            paddingHorizontal: 8,
-                            paddingVertical: 2,
-                            marginLeft: 8,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+            <View style={stylesComponents.renderedExpensesHeader}>
+                <View style={stylesComponents.renderedExpensesTitleRow}>
+                    <Text style={stylesTexts.renderedExpensesTitle}>
+                        Comprobantes Rendidos
+                    </Text>
+                    <View style={stylesComponents.badgeCountContainer}>
+                        <Text style={stylesTexts.badgeCountText}>
                             {count}
                         </Text>
                     </View>
@@ -101,7 +86,7 @@ const CardRenderedExpenses: React.FC<CardRenderedExpensesProps> = ({
                         activeOpacity={0.7}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}>
+                        <Text style={stylesTexts.seeAllLinkText}>
                             Ver todos {'>'}
                         </Text>
                     </TouchableOpacity>
@@ -109,18 +94,11 @@ const CardRenderedExpenses: React.FC<CardRenderedExpensesProps> = ({
             </View>
 
             {/* Contenedor idéntico al bloque del Home (HomeOperatorScreen:L28) */}
-            <View
-                style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 10,
-                    paddingHorizontal: 15,
-                    paddingBottom: 10,
-                }}
-            >
+            <View style={stylesComponents.renderedExpensesCardsContainer}>
                 {expenses.length === 0 ? (
-                    <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                    <View style={stylesComponents.renderedExpensesEmptyContainer}>
                         <Ionicons name="receipt-outline" size={32} color={colors.textDisabled} />
-                        <Text style={[stylesTexts.subtitle, { marginTop: 8, marginBottom: 0 }]}>
+                        <Text style={stylesTexts.renderedExpensesEmptyText}>
                             No hay comprobantes rendidos aún
                         </Text>
                     </View>

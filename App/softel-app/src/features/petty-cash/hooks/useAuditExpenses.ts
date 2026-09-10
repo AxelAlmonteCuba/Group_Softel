@@ -6,6 +6,7 @@ import {
     ExpenseItemResponse,
 } from '@/features/petty-cash/services/pettyCashService';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * Normaliza y resuelve la URL de la imagen del comprobante.
@@ -25,7 +26,10 @@ export const resolveImageUrl = (receiptUrl?: string): string => {
 /**
  * Convierte la respuesta del backend (según Postman spec) al modelo de la tarjeta de auditoría.
  */
-export const mapBackendExpenseToAuditData = (item: ExpenseItemResponse): AuditExpenseData => {
+export const mapBackendExpenseToAuditData = (
+    item: ExpenseItemResponse,
+    esReembolsoDirecto = false,
+): AuditExpenseData => {
     const usuarioNombre = item.expenseUser
         ? `${item.expenseUser.nombres} ${item.expenseUser.apellidos}`.trim()
         : 'Usuario de campo';
@@ -52,8 +56,10 @@ export const mapBackendExpenseToAuditData = (item: ExpenseItemResponse): AuditEx
             ? `DNI: ${item.expenseUser.documento_identidad}`
             : undefined,
         urlComprobante: resolveImageUrl(item.receiptUrl),
-        estado: item.status,
+        estado: (item.status === 'APROBADO' && item.isReimbursed) ? 'LIQUIDADO' : item.status,
         comentariosAuditoria: item.evaluationComment,
+        isReimbursed: Boolean(item.isReimbursed),
+        esReembolsoDirecto,
     };
 };
 
@@ -66,7 +72,9 @@ export const useAuditExpenses = (
     cajaId?: string,
     isAdmin = false,
     initialCajaStatus?: string,
+    isDirectOnly = false,
 ) => {
+    const usuario = useAuthStore((state) => state.usuario);
     const [cajaStatus, setCajaStatus] = useState<string | undefined>(initialCajaStatus);
     const [expenses, setExpenses] = useState<AuditExpenseData[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -77,7 +85,7 @@ export const useAuditExpenses = (
     const normalizedStatus = (cajaStatus || initialCajaStatus || '').trim().toUpperCase();
     const isCajaLiquidada = normalizedStatus === 'LIQUIDADA';
     const isCajaCerrada = normalizedStatus === 'CERRADA';
-    const isCajaCongelada = isCajaLiquidada || isCajaCerrada;
+    const isCajaCongelada = !isDirectOnly && (isCajaLiquidada || isCajaCerrada);
 
     // Modal de previsualización de foto
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -90,12 +98,21 @@ export const useAuditExpenses = (
     const [submittingAudit, setSubmittingAudit] = useState<boolean>(false);
 
     /**
-     * Carga los gastos desde el backend según la cajaId o bandeja general.
+     * Carga los gastos desde el backend según la cajaId, reembolsos directos o bandeja general.
      */
     const fetchExpenses = useCallback(async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
         try {
-            if (cajaId) {
+            if (isDirectOnly) {
+                let rawExpenses: ExpenseItemResponse[] = [];
+                if (isAdmin) {
+                    rawExpenses = await pettyCashService.getAllDirectExpenses();
+                } else if (usuario?.id) {
+                    rawExpenses = await pettyCashService.getPendingDirectReimbursementsByUser(usuario.id);
+                }
+                const mapped = (rawExpenses || []).map((e) => mapBackendExpenseToAuditData(e, true));
+                setExpenses(mapped);
+            } else if (cajaId) {
                 const [rawExpenses, cajaData] = await Promise.all([
                     pettyCashService.getExpensesByPettyCash(cajaId),
                     pettyCashService.getById(cajaId).catch(() => null),
@@ -105,11 +122,11 @@ export const useAuditExpenses = (
                     setCajaStatus(cajaData.status);
                 }
 
-                const mapped = (rawExpenses || []).map(mapBackendExpenseToAuditData);
+                const mapped = (rawExpenses || []).map((e) => mapBackendExpenseToAuditData(e, false));
                 setExpenses(mapped);
             } else if (isAdmin) {
                 const rawExpenses = await pettyCashService.getPendingExpenses();
-                const mapped = (rawExpenses || []).map(mapBackendExpenseToAuditData);
+                const mapped = (rawExpenses || []).map((e) => mapBackendExpenseToAuditData(e, !e.pettyCashId));
                 setExpenses(mapped);
             }
         } catch (error: any) {
@@ -123,16 +140,16 @@ export const useAuditExpenses = (
             setLoading(false);
             setRefreshing(false);
         }
-    }, [cajaId, isAdmin]);
+    }, [cajaId, isAdmin, isDirectOnly, usuario?.id]);
 
     useEffect(() => {
         fetchExpenses();
     }, [fetchExpenses]);
 
-    const handleRefresh = () => {
+    const handleRefresh = useCallback(() => {
         setRefreshing(true);
         fetchExpenses(true);
-    };
+    }, [fetchExpenses]);
 
     /**
      * Acción: Aprobar Gasto
@@ -148,9 +165,13 @@ export const useAuditExpenses = (
         }
 
         const target = expenses.find((e) => e.id === id);
+        const confirmMsg = isDirectOnly
+            ? `¿Estás seguro de aprobar este reembolso directo de S/ ${target?.monto.toFixed(2) || '0.00'}?`
+            : `¿Estás seguro de aprobar este gasto de S/ ${target?.monto.toFixed(2) || '0.00'}?\n\nAl aprobarlo, el saldo de la caja chica se recalculará automáticamente.`;
+
         Alert.alert(
             'Aprobar Gasto',
-            `¿Estás seguro de aprobar este gasto de S/ ${target?.monto.toFixed(2) || '0.00'}?\n\nAl aprobarlo, el saldo de la caja chica se recalculará automáticamente.`,
+            confirmMsg,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -165,7 +186,7 @@ export const useAuditExpenses = (
                                     item.id === id ? { ...item, estado: 'APROBADO' } : item,
                                 ),
                             );
-                            Alert.alert('Éxito', 'El gasto fue aprobado y el saldo actualizado.');
+                            Alert.alert('Éxito', 'El gasto fue aprobado exitosamente.');
                         } catch (error: any) {
                             console.error('Error al aprobar gasto:', error);
                             Alert.alert(
@@ -294,6 +315,40 @@ export const useAuditExpenses = (
         setPreviewImage(url);
     };
 
+    /**
+     * Acción: Liquidar Reembolso Directo (Marcar como Pagado)
+     */
+    const handleLiquidar = (id: string) => {
+        const target = expenses.find((e) => e.id === id);
+        Alert.alert(
+            'Confirmar Liquidación',
+            `¿El fondo de S/ ${target?.monto.toFixed(2) || '0.00'} ya fue depositado al colaborador para liquidar este reembolso directo?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Sí, ya fue depositado',
+                    onPress: async () => {
+                        setActionLoadingId(id);
+                        try {
+                            await pettyCashService.markAsReimbursed(id);
+                            Alert.alert('Reembolso Liquidado', 'El reembolso directo ha sido marcado como liquidado exitosamente.');
+                            fetchExpenses(true);
+                        } catch (error: any) {
+                            console.error('Error al liquidar reembolso directo:', error);
+                            Alert.alert(
+                                'Error al liquidar',
+                                error?.response?.data?.mensaje ||
+                                    'No se pudo liquidar el reembolso. Intenta nuevamente.',
+                            );
+                        } finally {
+                            setActionLoadingId(null);
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const closePreview = () => setPreviewImage(null);
     const closeAuditModal = () => {
         if (!submittingAudit) setAuditModalVisible(false);
@@ -317,6 +372,7 @@ export const useAuditExpenses = (
         handleAprobar,
         handleObservar,
         handleRechazar,
+        handleLiquidar,
         submitAuditDecision,
         handleVerFoto,
         closePreview,

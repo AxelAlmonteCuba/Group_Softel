@@ -35,7 +35,11 @@ interface StatusBadgeConfig {
 
 export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfig => {
     const raw = (status || '').trim().toUpperCase();
-    const cleanStatus = raw.includes('APROB')
+    const cleanStatus = raw.includes('LIQUID')
+        ? (raw.includes('LIQUIDADA') ? 'LIQUIDADA' : 'LIQUIDADO')
+        : raw.includes('REEMBOLS')
+        ? 'REEMBOLSADO'
+        : raw.includes('APROB')
         ? 'APROBADO'
         : raw.includes('RECHAZ')
         ? 'RECHAZADO'
@@ -92,8 +96,10 @@ export const getStatusBadgeConfig = (status?: PettyCashStatus): StatusBadgeConfi
                 icon: 'lock-closed-outline',
             };
         case 'LIQUIDADA':
+        case 'LIQUIDADO':
+        case 'REEMBOLSADO':
             return {
-                label: 'LIQUIDADA',
+                label: cleanStatus === 'REEMBOLSADO' ? 'REEMBOLSADO' : cleanStatus === 'LIQUIDADA' ? 'LIQUIDADA' : 'LIQUIDADO',
                 bgColor: colors.liquidatedSoft,
                 dotColor: colors.liquidated,
                 textColor: colors.liquidated,

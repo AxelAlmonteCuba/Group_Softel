@@ -203,6 +203,9 @@ export const stylesComponents = StyleSheet.create({
     },
     filterChip: {
         ...baseSurfaceBorder,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
@@ -801,5 +804,85 @@ export const stylesComponents = StyleSheet.create({
     },
     alertBannerContent: {
         flex: 1,
+    },
+    // ==========================================
+    // SELECTOR DUAL SEGMENTADO (SegmentedDualButton)
+    // ==========================================
+    segmentedCapsuleContainer: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        backgroundColor: '#EAECEF',
+        borderRadius: 14,
+        padding: 4,
+        width: '100%',
+        marginBottom: 16,
+    },
+    segmentedCapsuleItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        borderRadius: 10,
+        gap: 6,
+        minHeight: 46,
+    },
+    segmentedCapsuleItemActive: {
+        backgroundColor: colors.primary,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    segmentedCapsuleItemInactive: {
+        backgroundColor: 'transparent',
+    },
+    // ==========================================
+    // ESTADO VACÍO (EmptyState)
+    // ==========================================
+    emptyStateContainer: {
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 40,
+    },
+    emptyStateIcon: {
+        marginBottom: 12,
+    },
+    // ==========================================
+    // COMPROBANTES RENDIDOS (CardRenderedExpenses)
+    // ==========================================
+    renderedExpensesContainer: {
+        marginBottom: 16,
+    },
+    renderedExpensesHeader: {
+        ...baseRowBetween,
+        marginBottom: 12,
+        marginTop: 8,
+    },
+    renderedExpensesTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    badgeCountContainer: {
+        backgroundColor: colors.border,
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        marginLeft: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    renderedExpensesCardsContainer: {
+        backgroundColor: colors.surface,
+        borderRadius: 10,
+        paddingHorizontal: 15,
+        paddingBottom: 10,
+    },
+    renderedExpensesEmptyContainer: {
+        paddingVertical: 24,
+        alignItems: 'center',
     },
 });

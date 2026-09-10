@@ -41,9 +41,9 @@ export class PettyCashController {
         return await this.pettyCashService.openPettyCash(id);
 
       case PettyCashAction.REVIEW:
-        // Idealmente aquí se validaría que el usuario que manda a revisión es el dueño de la caja
-        // pero por simplicidad de roles asumiremos que lo hace el SUPERVISOR.
-        if (role !== 'SUPERVISOR') throw new ForbiddenException('Solo el Supervisor puede mandar a revisión.');
+        if (role !== 'SUPERVISOR' && role !== 'ADMINISTRADOR') {
+          throw new ForbiddenException('Solo el Supervisor o Administrador puede mandar a revisión.');
+        }
         return await this.pettyCashService.reviewPettyCash(id);
 
       case PettyCashAction.CLOSE:

@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import React from 'react';
+import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
-import { stylesComponents, stylesTexts } from '@/theme/styles';
 import HeaderBar from '@/components/layout/HeaderBar';
+import EmptyState from '@/components/common/EmptyState';
 import CardAdminPettyCash from '@/components/cards/CardAdminPettyCash';
-import { pettyCashService, PettyCashResponse } from '../services/pettyCashService';
+import CardAuditExpense from '@/components/cards/CardAuditExpense';
+import PhotoPreviewModal from '@/components/modals/PhotoPreviewModal';
+import AuditDecisionModal from '@/components/modals/AuditDecisionModal';
+import SegmentedDualButton from '@/components/buttons/SegmentedDualButton';
+import FilterChips from '@/components/inputs/FilterChips';
+import { useAdminPettyCash, AdminTrayTab } from '../hooks/useAdminPettyCash';
 
 interface Props {
     onBack?: () => void;
@@ -19,39 +23,33 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 /**
  * Pantalla de Control de Fondos y Cajas Chicas para el Administrador y Contador.
- * Muestra el listado de cajas en operación, auditoría y rendición mediante CardAdminPettyCash.
+ * Toda la lógica de estado, filtros, carga y auditoría se delega al hook useAdminPettyCash.
  */
 const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
     const navigation = useNavigation<NavigationProp>();
-    const [cajas, setCajas] = useState<PettyCashResponse[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [refreshing, setRefreshing] = useState<boolean>(false);
-
-    // Cargar todas las cajas chicas desde el backend
-    const cargarCajas = useCallback(async () => {
-        try {
-            const data = await pettyCashService.getAll();
-            setCajas(data || []);
-        } catch (error) {
-            console.log('Error al cargar cajas chicas para el Administrador:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        cargarCajas();
-    }, [cargarCajas]);
-
-    const handleRefresh = () => {
-        setRefreshing(true);
-        cargarCajas();
-    };
+    const {
+        isAdmin,
+        selectedTab,
+        setSelectedTab,
+        selectedStatusFilter,
+        setSelectedStatusFilter,
+        selectedExpenseFilter,
+        setSelectedExpenseFilter,
+        totalCajas,
+        totalReembolsos,
+        filterOptionsCajas,
+        filterOptionsReembolsos,
+        filteredCajas,
+        filteredReembolsos,
+        isLoading,
+        isRefreshing,
+        handleRefresh,
+        directAudit,
+    } = useAdminPettyCash();
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            {/* Cabecera limpia estándar reutilizable */}
+            {/* Cabecera limpia */}
             <HeaderBar
                 title="Control de Fondos"
                 onBack={onBack}
@@ -59,57 +57,133 @@ const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
                 onRightPress={onFilterPress}
             />
 
-            {/* Listado de tarjetas de fondos */}
+            {/* Selector dual superior */}
+            <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+                <SegmentedDualButton<AdminTrayTab>
+                    options={[
+                        {
+                            value: 'cajas',
+                            label: 'Cajas Chicas',
+                            iconName: 'wallet-outline',
+                            count: totalCajas,
+                        },
+                        {
+                            value: 'reembolsos',
+                            label: 'Reembolsos Directos',
+                            iconName: 'document-text-outline',
+                            count: totalReembolsos,
+                            countOnNewLine: true,
+                        },
+                    ]}
+                    selectedValue={selectedTab}
+                    onSelect={setSelectedTab}
+                    variant="capsule"
+                />
+            </View>
+
+            {/* Chips de filtrado estandarizados */}
+            <View style={{ marginBottom: 6 }}>
+                {selectedTab === 'cajas' ? (
+                    <FilterChips
+                        options={filterOptionsCajas}
+                        selectedValue={selectedStatusFilter}
+                        onSelect={setSelectedStatusFilter}
+                    />
+                ) : (
+                    <FilterChips
+                        options={filterOptionsReembolsos}
+                        selectedValue={selectedExpenseFilter}
+                        onSelect={setSelectedExpenseFilter}
+                    />
+                )}
+            </View>
+
+            {/* Listado de elementos según la opción seleccionada */}
             <ScrollView
-                style={stylesComponents.containerApp}
+                style={{ flex: 1, paddingHorizontal: 16 }}
                 contentContainerStyle={{ paddingBottom: 32 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
-                        refreshing={refreshing}
+                        refreshing={isRefreshing}
                         onRefresh={handleRefresh}
                         colors={[colors.primary]}
                     />
                 }
             >
-                {loading ? (
+                {isLoading ? (
                     <View style={{ paddingVertical: 48, alignItems: 'center', justifyContent: 'center' }}>
                         <ActivityIndicator size="small" color={colors.primary} />
                     </View>
-                ) : cajas.length === 0 ? (
-                    <View
-                        style={{
-                            padding: 32,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginTop: 40,
-                        }}
-                    >
-                        <Ionicons name="folder-open-outline" size={48} color={colors.textDisabled} style={{ marginBottom: 12 }} />
-                        <Text style={[stylesTexts.textCardOptionTitle, { color: colors.textSecondary }]}>
-                            No hay cajas chicas registradas
-                        </Text>
-                        <Text style={[stylesTexts.subtitle, { marginTop: 4, textAlign: 'center' }]}>
-                            Las solicitudes de apertura y fondos rendidos aparecerán aquí para tu control y auditoría.
-                        </Text>
-                    </View>
+                ) : selectedTab === 'cajas' ? (
+                    filteredCajas.length === 0 ? (
+                        <EmptyState
+                            iconName="folder-open-outline"
+                            title="No hay cajas chicas en este estado"
+                            description="Selecciona otro filtro para ver las cajas chicas en operación o auditoría."
+                        />
+                    ) : (
+                        <View style={{ marginTop: 2 }}>
+                            {filteredCajas.map((caja) => (
+                                <CardAdminPettyCash
+                                    key={caja.id}
+                                    caja={caja}
+                                    onPress={() => {
+                                        navigation.navigate('PettyCashDetail', { id: caja.id });
+                                    }}
+                                />
+                            ))}
+                        </View>
+                    )
+                ) : filteredReembolsos.length === 0 ? (
+                    <EmptyState
+                        iconName="folder-open-outline"
+                        title="No hay reembolsos en este estado"
+                        description={
+                            totalReembolsos === 0
+                                ? 'No hay comprobantes de reembolso directo registrados en el sistema.'
+                                : 'Selecciona otro filtro para ver los comprobantes directos.'
+                        }
+                    />
                 ) : (
-                    <View style={{ marginTop: 4 }}>
-                        {cajas.map((caja) => (
-                            <CardAdminPettyCash
-                                key={caja.id}
-                                caja={caja}
-                                onPress={() => {
-                                    navigation.navigate('PettyCashDetail', { id: caja.id });
-                                }}
+                    <View style={{ marginTop: 2 }}>
+                        {filteredReembolsos.map((gasto) => (
+                            <CardAuditExpense
+                                key={gasto.id}
+                                gasto={gasto}
+                                esAdmin={isAdmin}
+                                bloqueado={false}
+                                loading={directAudit.actionLoadingId === gasto.id}
+                                onAprobar={directAudit.handleAprobar}
+                                onObservar={directAudit.handleObservar}
+                                onRechazar={directAudit.handleRechazar}
+                                onLiquidar={directAudit.handleLiquidar}
+                                onVerFoto={directAudit.handleVerFoto}
                             />
                         ))}
                     </View>
                 )}
             </ScrollView>
+
+            {/* Modal de Previsualización de Foto */}
+            <PhotoPreviewModal
+                visible={!!directAudit.previewImage}
+                imageUrl={directAudit.previewImage}
+                onClose={directAudit.closePreview}
+            />
+
+            {/* Modal de Justificación para Observar o Rechazar */}
+            <AuditDecisionModal
+                visible={directAudit.auditModalVisible}
+                decision={directAudit.auditDecision}
+                comment={directAudit.auditComment}
+                onChangeComment={directAudit.setAuditComment}
+                onCancel={directAudit.closeAuditModal}
+                onConfirm={directAudit.submitAuditDecision}
+                loading={directAudit.submittingAudit}
+            />
         </View>
     );
 };
 
 export default AdminPettyCashScreen;
-

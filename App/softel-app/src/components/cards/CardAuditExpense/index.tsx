@@ -20,8 +20,10 @@ export interface AuditExpenseData {
     pesoArchivo?: string;
     ruc?: string;
     urlComprobante?: string;
-    estado?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO' | string;
+    estado?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO' | 'LIQUIDADO' | string;
     comentariosAuditoria?: string | null;
+    isReimbursed?: boolean;
+    esReembolsoDirecto?: boolean;
 }
 
 export interface CardAuditExpenseProps {
@@ -33,6 +35,7 @@ export interface CardAuditExpenseProps {
     onAprobar?: (id: string) => void;
     onObservar?: (id: string) => void;
     onRechazar?: (id: string) => void;
+    onLiquidar?: (id: string) => void;
     onVerFoto?: (url?: string) => void;
 }
 
@@ -55,19 +58,22 @@ export const CardAuditExpense: React.FC<CardAuditExpenseProps> = ({
     onAprobar,
     onObservar,
     onRechazar,
+    onLiquidar,
     onVerFoto,
 }) => {
     const estadoNormalizado = (gasto.estado || '').trim().toUpperCase();
     const acentoFinal =
         colorAcento ||
-        (estadoNormalizado.includes('APROB')
-            ? '#16A34A'
+        (estadoNormalizado.includes('LIQUID') || estadoNormalizado.includes('REEMBOLS')
+            ? colors.liquidated
+            : estadoNormalizado.includes('APROB')
+            ? colors.success
             : estadoNormalizado.includes('RECHAZ')
-            ? '#DC2626'
+            ? colors.error
             : estadoNormalizado.includes('OBSERV')
             ? '#CA8A04'
             : estadoNormalizado.includes('PEND')
-            ? '#F59E0B'
+            ? colors.warning
             : colors.primary);
 
     return (
@@ -137,10 +143,13 @@ export const CardAuditExpense: React.FC<CardAuditExpenseProps> = ({
                 esAdmin={esAdmin}
                 bloqueado={bloqueado}
                 estado={gasto.estado}
+                isReimbursed={gasto.isReimbursed}
+                esReembolsoDirecto={gasto.esReembolsoDirecto}
                 loading={loading}
-                onAprobar={() => onAprobar?.(gasto.id)}
-                onObservar={() => onObservar?.(gasto.id)}
-                onRechazar={() => onRechazar?.(gasto.id)}
+                onAprobar={onAprobar ? () => onAprobar(gasto.id) : undefined}
+                onObservar={onObservar ? () => onObservar(gasto.id) : undefined}
+                onRechazar={onRechazar ? () => onRechazar(gasto.id) : undefined}
+                onLiquidar={onLiquidar ? () => onLiquidar(gasto.id) : undefined}
             />
         </View>
     );

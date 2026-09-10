@@ -343,23 +343,82 @@ export class ExpensesService {
   }
 
   /**
-   * Obtiene todos los reembolsos directos (sin caja chica) aprobados y no pagados de un usuario.
+   * Obtiene todos los gastos directos (sin caja chica) registrados en el sistema.
+   * Utilizado en la bandeja de Reembolsos Directos para revisión y auditoría.
+   */
+  async getAllDirectExpenses(): Promise<any[]> {
+    const expenses = await this.expenseRepository.find({
+      where: {
+        pettyCashId: IsNull(),
+      },
+      relations: {
+        category: true,
+        expenseUser: true,
+        evaluatorUser: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return expenses.map((expense) => ({
+      id: expense.id,
+      amount: expense.amount,
+      reason: expense.reason,
+      receiptUrl: expense.receiptUrl,
+      status: expense.status,
+      isReimbursed: expense.isReimbursed,
+      evaluationComment: expense.evaluationComment,
+      expenseDate: expense.expenseDate,
+      createdAt: expense.createdAt,
+      category: {
+        id: expense.category?.id,
+        name: expense.category?.name,
+      },
+      expenseUser: expense.expenseUser
+        ? {
+          id: expense.expenseUser.id,
+          nombres: expense.expenseUser.nombres,
+          apellidos: expense.expenseUser.apellidos,
+          documento_identidad: expense.expenseUser.documento_identidad,
+          rol: expense.expenseUser.rol,
+          cargo: expense.expenseUser.cargo,
+        }
+        : null,
+      evaluatorUser: expense.evaluatorUser
+        ? {
+          id: expense.evaluatorUser.id,
+          nombres: expense.evaluatorUser.nombres,
+          apellidos: expense.evaluatorUser.apellidos,
+        }
+        : null,
+    }));
+  }
+
+  /**
+   * Obtiene todos los reembolsos directos (sin caja chica) de un usuario específico.
+   * Incluye todos sus comprobantes (en cualquier estado) y calcula el saldo a favor pendiente (totalOwed).
    */
   async getPendingDirectReimbursementsByUser(userId: string): Promise<{ expenses: any[], totalOwed: number }> {
     const expenses = await this.expenseRepository.find({
       where: {
         expenseUserId: userId,
         pettyCashId: IsNull(),
-        status: 'APROBADO',
-        isReimbursed: false,
       },
       relations: {
         category: true,
+        expenseUser: true,
+        evaluatorUser: true,
       },
-      order: { expenseDate: 'ASC' },
+      order: {
+        expenseDate: 'DESC',
+        createdAt: 'DESC',
+      },
     });
 
-    const totalOwed = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    const totalOwed = expenses
+      .filter((exp) => exp.status === 'APROBADO' && !exp.isReimbursed)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
 
     const cleanExpenses = expenses.map((exp) => ({
       id: exp.id,
@@ -367,11 +426,31 @@ export class ExpensesService {
       reason: exp.reason,
       receiptUrl: exp.receiptUrl,
       status: exp.status,
+      isReimbursed: exp.isReimbursed,
+      evaluationComment: exp.evaluationComment,
       expenseDate: exp.expenseDate,
+      createdAt: exp.createdAt,
       category: {
-        id: exp.category.id,
-        name: exp.category.name,
+        id: exp.category?.id,
+        name: exp.category?.name,
       },
+      expenseUser: exp.expenseUser
+        ? {
+            id: exp.expenseUser.id,
+            nombres: exp.expenseUser.nombres,
+            apellidos: exp.expenseUser.apellidos,
+            documento_identidad: exp.expenseUser.documento_identidad,
+            rol: exp.expenseUser.rol,
+            cargo: exp.expenseUser.cargo,
+          }
+        : null,
+      evaluatorUser: exp.evaluatorUser
+        ? {
+            id: exp.evaluatorUser.id,
+            nombres: exp.evaluatorUser.nombres,
+            apellidos: exp.evaluatorUser.apellidos,
+          }
+        : null,
     }));
 
     return { expenses: cleanExpenses, totalOwed };

@@ -1,8 +1,6 @@
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
-import ButtonPrimary from '@/components/buttons/ButtonPrimary';
-import ButtonSecondary from '@/components/buttons/ButtonSecondary';
-import { stylesComponents } from '@/theme/styles';
+import { StyleProp, ViewStyle } from 'react-native';
+import SegmentedDualButton, { DualOption } from '@/components/buttons/SegmentedDualButton';
 
 export type ExpenseSourceType = 'caja_chica' | 'reembolso';
 
@@ -12,12 +10,13 @@ export interface ExpenseSourceSelectorProps {
     hasActivePettyCash?: boolean;
     pettyCashName?: string;
     directRefundLabel?: string;
+    variant?: 'capsule' | 'buttons';
     containerStyle?: StyleProp<ViewStyle>;
 }
 
 /**
  * Selector de origen de gasto:
- * Reutiliza directamente ButtonPrimary y ButtonSecondary con variante 'small'.
+ * Especialización de SegmentedDualButton para el flujo de registro de gastos.
  * Si no hay caja chica activa, bloquea la opción y marca Reembolso Directo.
  */
 const ExpenseSourceSelector: React.FC<ExpenseSourceSelectorProps> = ({
@@ -26,62 +25,36 @@ const ExpenseSourceSelector: React.FC<ExpenseSourceSelectorProps> = ({
     hasActivePettyCash = true,
     pettyCashName = 'Caja Chica Activa',
     directRefundLabel = 'Reembolso Directo',
+    variant = 'buttons',
     containerStyle,
 }) => {
-    const isPettyCash = hasActivePettyCash && selectedSource === 'caja_chica';
+    const options: [DualOption<ExpenseSourceType>, DualOption<ExpenseSourceType>] = [
+        {
+            value: 'caja_chica',
+            label: pettyCashName,
+            iconName: 'wallet-outline',
+            disabled: !hasActivePettyCash,
+        },
+        {
+            value: 'reembolso',
+            label: directRefundLabel,
+            iconName: 'sync-outline',
+        },
+    ];
 
     return (
-        <View style={[stylesComponents.expenseSourceRow, containerStyle]}>
-            {/* Opción 1: Caja Chica Activa */}
-            <View style={stylesComponents.flex1}>
-                {isPettyCash ? (
-                    <ButtonPrimary
-                        text={pettyCashName}
-                        iconName="wallet-outline"
-                        size="small"
-                        numberOfLines={1}
-                        onPress={() => onSourceChange('caja_chica')}
-                    />
-                ) : (
-                    <ButtonSecondary
-                        text={pettyCashName}
-                        iconName="wallet-outline"
-                        size="small"
-                        numberOfLines={1}
-                        disabled={!hasActivePettyCash}
-                        onPress={() => {
-                            if (hasActivePettyCash) {
-                                onSourceChange('caja_chica');
-                            }
-                        }}
-                    />
-                )}
-            </View>
-
-            {/* Opción 2: Reembolso Directo */}
-            <View style={stylesComponents.flex1}>
-                {!isPettyCash ? (
-                    <ButtonPrimary
-                        text={directRefundLabel}
-                        iconName="sync-outline"
-                        size="small"
-                        numberOfLines={1}
-                        disabled={!hasActivePettyCash}
-                        onPress={() => onSourceChange('reembolso')}
-                    />
-                ) : (
-                    <ButtonSecondary
-                        text={directRefundLabel}
-                        iconName="sync-outline"
-                        size="small"
-                        numberOfLines={1}
-                        onPress={() => onSourceChange('reembolso')}
-                    />
-                )}
-            </View>
-        </View>
+        <SegmentedDualButton<ExpenseSourceType>
+            options={options}
+            selectedValue={selectedSource}
+            onSelect={(source) => {
+                if (source === 'caja_chica' && !hasActivePettyCash) return;
+                onSourceChange(source);
+            }}
+            variant={variant}
+            containerStyle={containerStyle}
+        />
     );
 };
 
 export default ExpenseSourceSelector;
-
+export { SegmentedDualButton, DualOption };

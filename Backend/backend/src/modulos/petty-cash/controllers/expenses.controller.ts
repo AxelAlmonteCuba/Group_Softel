@@ -101,6 +101,12 @@ export class ExpensesController {
     return await this.expensesService.getPendingExpenses();
   }
 
+  @Get('reembolsos-directos')
+  @Roles('ADMINISTRADOR', 'CONTADOR')
+  async getAllDirectExpenses() {
+    return await this.expensesService.getAllDirectExpenses();
+  }
+
   @Get('reembolsos-directos/usuarios-con-deuda')
   @Roles('ADMINISTRADOR', 'CONTADOR')
   async getUsersWithPendingReimbursements() {

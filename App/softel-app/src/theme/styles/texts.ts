@@ -5,8 +5,8 @@ import { baseTextCenter, baseTextButtonOption } from "./base";
 
 export const stylesTexts = StyleSheet.create({
     textButtonPrimary: {
+        ...baseTextButtonOption,
         color: colors.textOnPrimary,
-        fontSize: 16,
     },
     basicTitle: {
         fontSize: typography.size.xxl,
@@ -99,7 +99,7 @@ export const stylesTexts = StyleSheet.create({
     filterChipText: {
         fontSize: 14,
         fontWeight: typography.weight.semiBold,
-        color: '#4B5563',
+        color: colors.textSecondary,
     },
     filterChipTextSelected: {
         color: colors.textOnPrimary,
@@ -153,5 +153,31 @@ export const stylesTexts = StyleSheet.create({
         fontSize: typography.size.sm,
         fontWeight: typography.weight.regular,
         lineHeight: 18,
+    },
+    // ==========================================
+    // COMPROBANTES RENDIDOS (CardRenderedExpenses)
+    // ==========================================
+    renderedExpensesTitle: {
+        fontSize: 16,
+        fontWeight: typography.weight.bold,
+        color: colors.textPrimary,
+    },
+    badgeCountText: {
+        fontSize: 12,
+        fontWeight: typography.weight.bold,
+        color: colors.textPrimary,
+    },
+    seeAllLinkText: {
+        color: colors.primary,
+        fontSize: 14,
+        fontWeight: typography.weight.semiBold,
+    },
+    renderedExpensesEmptyText: {
+        fontSize: 14,
+        fontWeight: typography.weight.regular,
+        color: colors.textSecondary,
+        ...baseTextCenter,
+        marginTop: 8,
+        marginBottom: 0,
     },
 });
