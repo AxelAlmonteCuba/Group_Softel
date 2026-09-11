@@ -36,6 +36,8 @@ git clone <URL_DEL_REPOSITORIO> GroupSoftel
 cd GroupSoftel
 ```
 
+> 💡 **Tip para usar PortableGit:** Si abres `git-bash` y necesitas moverte a tu código que está en otro disco (por ejemplo en tu disco D o E), usa una barra diagonal y la letra en minúscula. Ejemplo: `cd /d/codigos_Axel` o `cd /e/GroupSoftel`.
+
 ---
 
 ## Paso 3 — Configurar el Backend (NestJS + MySQL local)
