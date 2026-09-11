@@ -1,0 +1,42 @@
+{
+  "name": "Softel Backend Dev",
+  "dockerComposeFile": "../docker-compose.dev.yml",
+  "service": "backend-local",
+  "workspaceFolder": "/workspace",
+
+  // Extensiones de VS Code que se instalan automáticamente dentro del contenedor
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "Prisma.prisma",
+        "christian-kohler.path-intellisense",
+        "mikestead.dotenv",
+        "eamodio.gitlens",
+        "ms-vscode.vscode-typescript-next",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  // Reenvío de puertos: backend en 3000, MySQL en 3306
+  "forwardPorts": [3000, 3306],
+  "portsAttributes": {
+    "3000": { "label": "Backend API", "onAutoForward": "notify" },
+    "3306": { "label": "MySQL", "onAutoForward": "silent" }
+  },
+
+  // Comando que se ejecuta al abrir el contenedor por primera vez
+  "postCreateCommand": "npm install",
+
+  // Usuario no-root para desarrollo
+  "remoteUser": "node"
+}
