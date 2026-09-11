@@ -14,6 +14,7 @@ export interface CardDetailPettyCashProps {
     fechaApertura?: string;
     auditor?: string;
     iniciales?: string;
+    justificacion?: string;
 }
 
 /**
@@ -47,7 +48,7 @@ const getInitials = (nombres?: string, apellidos?: string): string => {
 
 /**
  * Tarjeta de Cabecera / Información de la Caja Chica en la pantalla de detalle.
- * Muestra avatar de custodio, nombre, cargo, chip de estado con color, fecha de apertura y auditor asignado.
+ * Muestra avatar de custodio, nombre, cargo, chip de estado con color, justificación operativa, fecha de apertura y auditor asignado.
  */
 const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
     caja,
@@ -57,6 +58,7 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
     fechaApertura,
     auditor,
     iniciales,
+    justificacion,
 }) => {
     // Datos derivados de la entidad o valores por defecto
     const managerNombres = caja?.managerUser?.nombres || '';
@@ -76,6 +78,8 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
         ? `${caja.evaluatorUser.nombres} ${caja.evaluatorUser.apellidos}`.trim()
         : 'Admin Softel';
     const finalAuditor = auditor || evaluatorNombre;
+
+    const finalJustificacion = (justificacion !== undefined ? justificacion : caja?.justification)?.trim();
 
     return (
         <View style={stylesComponents.cardHistoryContainer}>
@@ -104,10 +108,49 @@ const CardDetailPettyCash: React.FC<CardDetailPettyCashProps> = ({
                 <StatusBadge status={caja?.status} />
             </View>
 
-            {/* 2. Divisor punteado / discontinuo */}
+            {/* 2. Justificación / Motivo Operativo de la Caja */}
+            <View
+                style={{
+                    backgroundColor: colors.background,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 9,
+                    marginTop: 12,
+                    borderLeftWidth: 3,
+                    borderLeftColor: colors.primary,
+                }}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                    <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                    <Text
+                        style={{
+                            fontSize: 11,
+                            fontWeight: '700',
+                            color: colors.textSecondary,
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5,
+                        }}
+                    >
+                        Motivo / Justificación
+                    </Text>
+                </View>
+                <Text
+                    style={{
+                        fontSize: 13,
+                        color: finalJustificacion ? colors.textPrimary : colors.textSecondary,
+                        fontWeight: finalJustificacion ? '500' : '400',
+                        fontStyle: finalJustificacion ? 'normal' : 'italic',
+                        lineHeight: 18,
+                    }}
+                >
+                    {finalJustificacion || 'Sin justificación especificada'}
+                </Text>
+            </View>
+
+            {/* 3. Divisor punteado / discontinuo */}
             <View style={stylesComponents.dividerDashed} />
 
-            {/* 3. Pie: Fecha de Apertura y Auditor Asignado */}
+            {/* 4. Pie: Fecha de Apertura y Auditor Asignado */}
             <View style={stylesComponents.rowBetween}>
                 {/* Fecha de Apertura */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>

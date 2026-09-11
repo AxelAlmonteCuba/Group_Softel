@@ -134,7 +134,9 @@ const PettyCashDetailScreen: React.FC = () => {
         onStatusUpdated: (updated) => setCaja(updated),
     });
 
-    const canRegisterExpense = cajaActiva.status === 'ABIERTA';
+    const isEncargado = usuario?.id === cajaActiva.managerUser?.id;
+    const isPersonalCampo = usuario?.rol === 'SUPERVISOR' || usuario?.rol === 'TRABAJADOR';
+    const canRegisterExpense = cajaActiva.status === 'ABIERTA' && (isEncargado || isPersonalCampo);
 
     const handleRegisterExpense = () => {
         navigation.navigate('RegisterExpense', {
@@ -189,6 +191,7 @@ const PettyCashDetailScreen: React.FC = () => {
                                 navigation.navigate('AuditExpenses', {
                                     cajaId: cajaActiva.id,
                                     cajaStatus: cajaActiva.status,
+                                    cajaJustification: cajaActiva.justification || undefined,
                                 });
                             }}
                             onPressExpense={(expense) => {

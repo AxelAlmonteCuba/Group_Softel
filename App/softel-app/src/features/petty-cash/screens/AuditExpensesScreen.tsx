@@ -31,6 +31,7 @@ const AuditExpensesScreen: React.FC = () => {
     const route = useRoute<AuditExpensesRouteProp>();
     const cajaId = route.params?.cajaId;
     const initialCajaStatus = route.params?.cajaStatus;
+    const cajaJustification = route.params?.cajaJustification;
 
     const usuario = useAuthStore((state) => state.usuario);
     const isAdmin = usuario?.rol === 'ADMINISTRADOR';
@@ -120,6 +121,48 @@ const AuditExpensesScreen: React.FC = () => {
                             </View>
                         </View>
                     )}
+
+                    {/* Banner informativo de Justificación de la Caja Chica para auditoría */}
+                    {cajaJustification ? (
+                        <View
+                            style={{
+                                backgroundColor: colors.surface,
+                                borderRadius: 12,
+                                paddingHorizontal: 14,
+                                paddingVertical: 10,
+                                marginBottom: 12,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                                borderLeftWidth: 4,
+                                borderLeftColor: colors.primary,
+                            }}
+                        >
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                                <Ionicons name="document-text-outline" size={14} color={colors.primary} />
+                                <Text
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: '700',
+                                        color: colors.textSecondary,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.5,
+                                    }}
+                                >
+                                    Motivo / Justificación de la Caja
+                                </Text>
+                            </View>
+                            <Text
+                                style={{
+                                    fontSize: 13,
+                                    color: colors.textPrimary,
+                                    fontWeight: '500',
+                                    lineHeight: 18,
+                                }}
+                            >
+                                {cajaJustification}
+                            </Text>
+                        </View>
+                    ) : null}
 
                     {expenses.length === 0 ? (
                         <View style={{ alignItems: 'center', marginTop: 48, paddingHorizontal: 24 }}>

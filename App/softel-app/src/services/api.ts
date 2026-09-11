@@ -10,8 +10,8 @@ export const API_ENV = {
   LOCAL: 'http://192.168.1.39:3000/api/v1',        // Backend local en tu PC (Hot-reload)
 };
 
-// Configuración activa para pruebas (apuntando al VPS en Desarrollo)
-const BASE_URL = API_ENV.LOCAL;
+// Configuración activa — Producción Oficial
+const BASE_URL = API_ENV.PROD_VPS;
 
 export const api = axios.create({
   baseURL: BASE_URL,

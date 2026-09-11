@@ -35,5 +35,9 @@ export type MainStackParamList = {
         cajaId?: string;
         expense?: ExpenseItemResponse;
     } | undefined;
-    AuditExpenses: { cajaId?: string; cajaStatus?: string } | undefined;
+    AuditExpenses: {
+        cajaId?: string;
+        cajaStatus?: string;
+        cajaJustification?: string;
+    } | undefined;
 };

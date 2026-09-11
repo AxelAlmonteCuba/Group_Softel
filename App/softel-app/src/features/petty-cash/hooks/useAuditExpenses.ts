@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import { AuditExpenseData } from '@/components/cards/CardAuditExpense';
 import {
@@ -64,9 +64,9 @@ export const mapBackendExpenseToAuditData = (
 };
 
 /**
- * Hook personalizado que encapsula toda la lógica de negocio, llamadas al backend
- * y gestión de estados para la pantalla de Auditoría de Gastos.
- * Garantiza el congelamiento estricto si la caja chica está LIQUIDADA o CERRADA.
+ * Hook centralizado de auditoría y visualización de gastos para:
+ * 1. Auditoría individual por caja chica (Admin y Supervisor).
+ * 2. Bandeja general de reembolsos directos (Admin y Trabajador).
  */
 export const useAuditExpenses = (
     cajaId?: string,
@@ -88,6 +88,9 @@ export const useAuditExpenses = (
     const [expenses, setExpenses] = useState<AuditExpenseData[]>(
         cachedDirect ? cachedDirect.map((e) => mapBackendExpenseToAuditData(e, true)) : []
     );
+    const expensesRef = useRef(expenses);
+    expensesRef.current = expenses;
+
     const [loading, setLoading] = useState<boolean>(!cachedDirect);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -112,7 +115,7 @@ export const useAuditExpenses = (
      * Carga los gastos desde el backend según la cajaId, reembolsos directos o bandeja general.
      */
     const fetchExpenses = useCallback(async (isRefresh = false, forceNetwork = false) => {
-        if (!isRefresh && !expenses.length) setLoading(true);
+        if (!isRefresh && !expensesRef.current.length) setLoading(true);
         try {
             if (isDirectOnly) {
                 let rawExpenses: ExpenseItemResponse[] = [];
@@ -151,7 +154,7 @@ export const useAuditExpenses = (
             setLoading(false);
             setRefreshing(false);
         }
-    }, [cajaId, isAdmin, isDirectOnly, usuario?.id, expenses.length]);
+    }, [cajaId, isAdmin, isDirectOnly, usuario?.id]);
 
     useEffect(() => {
         fetchExpenses();

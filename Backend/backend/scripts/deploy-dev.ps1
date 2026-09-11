@@ -15,7 +15,7 @@ ssh softel-vps "cd /opt/softel && tar -xzf dist.tar.gz && rm dist.tar.gz"
 Remove-Item dist.tar.gz -Force
 
 Write-Host "`n🔄 [3/4] Reconstruyendo y reiniciando contenedor backend-dev..." -ForegroundColor Cyan
-ssh softel-vps "cd /opt/softel && docker compose build backend-dev && docker compose up -d backend-dev"
+ssh softel-vps "cd /opt/softel && docker compose build --no-cache backend-dev && docker compose up -d --force-recreate backend-dev"
 
 Write-Host "`n🩺 [4/4] Verificando salud en https://api.g-softel.com:8443/api/v1/health..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3

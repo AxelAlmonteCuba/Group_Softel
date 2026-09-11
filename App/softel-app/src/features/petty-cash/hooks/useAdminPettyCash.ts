@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '@/theme/colors';
 import { FilterOption } from '@/components/inputs/FilterChips';
@@ -40,13 +40,15 @@ export const useAdminPettyCash = () => {
 
     // 2. Hook de auditoría exclusivo para Reembolsos Directos (gastos sin caja chica)
     const directAudit = useAuditExpenses(undefined, isAdmin, undefined, true);
+    const fetchDirectAuditRef = useRef(directAudit.fetchExpenses);
+    fetchDirectAuditRef.current = directAudit.fetchExpenses;
 
     useFocusEffect(
         useCallback(() => {
             // Reutiliza caché si tiene menos de 60s; de lo contrario actualiza en segundo plano
             cargarCajas(false);
-            directAudit.fetchExpenses(false, false);
-        }, [cargarCajas, directAudit.fetchExpenses])
+            fetchDirectAuditRef.current?.(false, false);
+        }, [cargarCajas])
     );
 
     const handleRefresh = useCallback(() => {

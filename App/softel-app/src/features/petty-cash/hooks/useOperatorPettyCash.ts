@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '@/theme/colors';
 import { useAuthStore } from '@/store/authStore';
@@ -155,12 +155,15 @@ export const useOperatorPettyCash = () => {
         }
     }, [usuario?.id]);
 
+    const fetchDirectExpensesRef = useRef(directExpenses.fetchExpenses);
+    fetchDirectExpensesRef.current = directExpenses.fetchExpenses;
+
     // Recargar datos al enfocar la pantalla reutilizando caché (<60s)
     useFocusEffect(
         useCallback(() => {
             fetchCajas(false);
-            directExpenses.fetchExpenses(false, false);
-        }, [fetchCajas, directExpenses])
+            fetchDirectExpensesRef.current?.(false, false);
+        }, [fetchCajas])
     );
 
     const handleRefresh = useCallback(() => {

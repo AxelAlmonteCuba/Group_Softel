@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 
-export type BottomTabKey = 'inicio' | 'reportes' | 'caja-chica' | 'mas';
+export type BottomTabKey = 'inicio' | 'caja-chica' | 'mas'; // 'reportes' deshabilitado hasta Fase 1.3
 
 export interface TabItem {
     key: BottomTabKey;
@@ -20,12 +20,13 @@ const TABS: TabItem[] = [
         iconActive: 'home',
         iconInactive: 'home-outline',
     },
-    {
-        key: 'reportes',
-        label: 'Reportes',
-        iconActive: 'clipboard',
-        iconInactive: 'clipboard-outline',
-    },
+    // Reportes deshabilitado hasta Fase 1.3 (Reporte Fotográfico)
+    // {
+    //     key: 'reportes',
+    //     label: 'Reportes',
+    //     iconActive: 'clipboard',
+    //     iconInactive: 'clipboard-outline',
+    // },
     {
         key: 'caja-chica',
         label: 'Caja Chica',

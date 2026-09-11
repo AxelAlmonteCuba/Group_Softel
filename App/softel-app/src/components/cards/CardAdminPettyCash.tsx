@@ -72,9 +72,9 @@ const CardAdminPettyCash: React.FC<CardAdminPettyCashProps> = ({
     const iniciales = getInitials(nombres, apellidos);
 
     const cargo = caja.managerUser?.cargo || 'Supervisor';
-    const detalleObra = obra || caja.justification || 'Obra Norte';
+    const detalleObra = (obra || caja.justification || '').trim();
     const codigo = `HCC-${caja.id.substring(0, 4).toUpperCase()}`;
-    const subtitulo = `${cargo} ${detalleObra} • ${codigo}`;
+    const subtitulo = detalleObra ? `${cargo} • ${detalleObra} • ${codigo}` : `${cargo} • ${codigo}`;
 
     // Etiqueta y monto del saldo inferior según el estado
     let labelSaldo = 'Saldo disponible: ';

@@ -2,11 +2,13 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, IsNull } from 'typeorm';
 import { Expense } from '../entities/expense.entity';
 import { PettyCash } from '../entities/petty-cash.entity';
+import { User } from '../../users/user.entity';
 import { CreateExpenseDto } from '../dtos/create-expense.dto';
 import { EvaluateExpenseDto, ExpenseDecision } from '../dtos/evaluate-expense.dto';
 import { UpdateExpenseDto } from '../dtos/update-expense.dto';
@@ -51,6 +53,21 @@ export class ExpensesService {
         if (pettyCash.status !== 'ABIERTA') {
           throw new BadRequestException(
             'Solo se pueden registrar gastos en una caja chica con estado ABIERTA.',
+          );
+        }
+
+        // Regla contable y de auditoría: Administradores y Contadores no pueden registrar gastos en cajas ajenas
+        const user = await queryRunner.manager.findOne(User, {
+          where: { id: expenseUserId },
+        });
+
+        if (
+          user &&
+          (user.rol === 'ADMINISTRADOR' || user.rol === 'CONTADOR') &&
+          pettyCash.managerUserId !== expenseUserId
+        ) {
+          throw new ForbiddenException(
+            'Los administradores y contadores no pueden registrar gastos en cajas chicas asignadas a otro custodio.',
           );
         }
       }

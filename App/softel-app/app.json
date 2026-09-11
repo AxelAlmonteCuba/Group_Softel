@@ -1,25 +1,34 @@
 {
   "expo": {
-    "name": "Group Softel",
+    "name": "Softel Syncrix",
     "slug": "softel-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/logo_login_final_2.jpg",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.softel.syncrix"
     },
     "android": {
+      "package": "com.softel.syncrix",
+      "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#B42318",
+        "foregroundImage": "./assets/images/logo_login_final_2.jpg",
+        "backgroundImage": "./assets/images/logo_login_final_2.jpg",
+        "monochromeImage": "./assets/images/logo_login_final_2.jpg"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bbb425d4-f905-4a24-a71d-ec69f6838862"
+      }
+    },
+    "owner": "groupsoftel"
   }
 }
