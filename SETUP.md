@@ -57,6 +57,24 @@ El backend estará disponible en: `http://localhost:3000/api/v1`
 
 ---
 
+## Paso 3.5 — Importar Base de Datos de Prueba (Opcional)
+
+Si trajiste un respaldo de tu base de datos anterior en un archivo `.sql` dentro de tu USB:
+
+1. Asegúrate de que el contenedor de MySQL esté corriendo (Paso 3).
+2. Abre **MySQL Workbench** (o tu gestor preferido) en la PC nueva.
+3. Conéctate a la base de datos local usando:
+   - **Host:** `127.0.0.1` (o `localhost`)
+   - **Puerto:** `3306`
+   - **Usuario:** `root`
+   - **Contraseña:** `SoftelRoot2026!`
+4. Ve a la pestaña **Administration** y selecciona **Data Import/Restore**.
+5. Selecciona **Import from Self-Contained File** y busca el archivo `.sql` en tu USB.
+6. En *Default Target Schema* selecciona `softel_dev`.
+7. Haz clic en **Start Import**.
+
+---
+
 ## Paso 4 — Configurar la App Móvil (Expo)
 
 ```powershell
