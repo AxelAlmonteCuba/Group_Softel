@@ -49,11 +49,26 @@ Write-Host "[OK] Docker Desktop instalado." -ForegroundColor Green
 # ------------------------------------------------------------------------------
 Write-Host "[5/5] Instalando herramientas globales (EAS CLI, Expo CLI)..." -ForegroundColor Yellow
 
-# Refrescar PATH para usar el node recien instalado
+# Refrescar PATH para usar las herramientas instaladas
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 npm install -g eas-cli expo-cli typescript ts-node
 Write-Host "[OK] EAS CLI, Expo CLI y TypeScript instalados globalmente." -ForegroundColor Green
+
+# ------------------------------------------------------------------------------
+# 6. Configuración de Git
+# ------------------------------------------------------------------------------
+Write-Host ""
+Write-Host "[6/6] Configurando Git..." -ForegroundColor Yellow
+$gitName = Read-Host "Ingresa tu nombre para Git (ej. Axel Almonte) [Deja en blanco para omitir]"
+if (![string]::IsNullOrWhiteSpace($gitName)) {
+    $gitEmail = Read-Host "Ingresa tu correo para Git (ej. tu@correo.com)"
+    git config --global user.name "$gitName"
+    git config --global user.email "$gitEmail"
+    Write-Host "[OK] Git configurado globalmente para $gitName <$gitEmail>." -ForegroundColor Green
+} else {
+    Write-Host "[INFO] Configuración de Git omitida." -ForegroundColor Gray
+}
 
 # ------------------------------------------------------------------------------
 # Resumen Final
