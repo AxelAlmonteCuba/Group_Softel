@@ -10,11 +10,14 @@ import CardHome from '@/components/cards/CardHome';
 import CardOptions from '@/components/cards/CardOptions';
 import { colors } from '@/theme';
 import { dashboardService } from '../services/dashboardService';
+import { useAuthStore } from '@/store/authStore';
+import { pettyCashService } from '../../petty-cash/services/pettyCashService';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList, 'Home'>;
 
 const HomeOperatorScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const usuario = useAuthStore(state => state.usuario);
   const [draftReportsCount, setDraftReportsCount] = useState<number>(0);
   const [pendingExpensesCount, setPendingExpensesCount] = useState<number>(0);
   const [approvedExpensesCount, setApprovedExpensesCount] = useState<number>(0);
@@ -43,6 +46,32 @@ const HomeOperatorScreen = () => {
     await loadSummary(true);
     setRefreshing(false);
   }, [loadSummary]);
+
+  const handleRegisterExpense = async () => {
+    if (usuario?.id) {
+      // 1. Intentamos con la caché específica de cajas (por si navegó a la sección)
+      const boxes = pettyCashService.getCachedUserBoxes(usuario.id);
+      const activeBox = boxes?.find(b => b.status === 'ABIERTA');
+      if (activeBox) {
+        navigation.navigate('RegisterExpense', { cajaId: activeBox.id });
+        return;
+      }
+    }
+    
+    // 2. Fallback: aseguramos que el resumen del dashboard esté cargado
+    try {
+      const summary = await dashboardService.getOperatorSummary(false);
+      if (summary?.activePettyCashId) {
+        navigation.navigate('RegisterExpense', { cajaId: summary.activePettyCashId });
+        return;
+      }
+    } catch (error) {
+      console.log('Error obteniendo resumen para registro:', error);
+    }
+
+    // 3. Si definitivamente no hay caja abierta, manda sin cajaId (reembolso directo)
+    navigation.navigate('RegisterExpense');
+  };
 
   return (
     <ScrollView
@@ -83,7 +112,7 @@ const HomeOperatorScreen = () => {
       />
       <ButtonSecondary
         text="Registrar gasto"
-        onPress={() => navigation.navigate('RegisterExpense')}
+        onPress={handleRegisterExpense}
         iconName="receipt-outline"
       />
 

@@ -17,8 +17,10 @@ export class DashboardController {
    */
   @Get('resumen-admin')
   @Roles('ADMINISTRADOR', 'CONTADOR')
-  async getAdminSummary(): Promise<AdminSummaryResponse> {
-    return await this.dashboardService.getAdminSummary();
+  async getAdminSummary(
+    @GetUser('id') userId: string,
+  ): Promise<AdminSummaryResponse> {
+    return await this.dashboardService.getAdminSummary(userId);
   }
 
   /**

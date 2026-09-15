@@ -9,12 +9,14 @@ export interface AdminSummaryResponse {
   activeUsersCount: number;
   reviewBoxesCount: number;
   draftReportsCount: number;
+  activePettyCashId?: string | null;
 }
 
 export interface OperatorSummaryResponse {
   draftReportsCount: number;
   pendingExpensesCount: number;
   approvedExpensesCount: number;
+  activePettyCashId?: string | null;
 }
 
 @Injectable()
@@ -32,16 +34,21 @@ export class DashboardService {
    * Consulta ultraligera de conteos para el resumen administrativo del Home.
    * Ejecuta dos COUNT(*) directos sin transferir colecciones completas de datos.
    */
-  async getAdminSummary(): Promise<AdminSummaryResponse> {
-    const [activeUsersCount, reviewBoxesCount] = await Promise.all([
+  async getAdminSummary(userId: string): Promise<AdminSummaryResponse> {
+    const [activeUsersCount, reviewBoxesCount, activeBox] = await Promise.all([
       this.userRepository.count({ where: { estado: 'ACTIVO' } }),
       this.pettyCashRepository.count({ where: { status: 'EN_REVISION' } }),
+      this.pettyCashRepository.findOne({
+        where: { managerUserId: userId, status: 'ABIERTA' },
+        select: { id: true },
+      }),
     ]);
 
     return {
       activeUsersCount,
       reviewBoxesCount,
       draftReportsCount: 0,
+      activePettyCashId: activeBox ? activeBox.id : null,
     };
   }
 
@@ -60,10 +67,16 @@ export class DashboardService {
       .where('gasto.usuario_gasto_id = :userId OR caja.usuario_encargado_id = :userId', { userId })
       .getRawOne();
 
+    const activeBox = await this.pettyCashRepository.findOne({
+      where: { managerUserId: userId, status: 'ABIERTA' },
+      select: { id: true },
+    });
+
     return {
       draftReportsCount: 0,
       pendingExpensesCount: Number(raw?.pendingExpensesCount ?? 0),
       approvedExpensesCount: Number(raw?.approvedExpensesCount ?? 0),
+      activePettyCashId: activeBox ? activeBox.id : null,
     };
   }
 }

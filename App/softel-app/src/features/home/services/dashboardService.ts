@@ -4,12 +4,14 @@ export interface AdminSummaryData {
     activeUsersCount: number;
     reviewBoxesCount: number;
     draftReportsCount: number;
+    activePettyCashId?: string | null;
 }
 
 export interface OperatorSummaryData {
     draftReportsCount: number;
     pendingExpensesCount: number;
     approvedExpensesCount: number;
+    activePettyCashId?: string | null;
 }
 
 // Caché en memoria para evitar llamadas redundantes a la API al cambiar de pestaña
@@ -56,6 +58,16 @@ export const dashboardService = {
         cachedOperatorSummary = response.data;
         lastOperatorFetchTimestamp = now;
         return cachedOperatorSummary;
+    },
+
+    /**
+     * Devuelve el resumen operativo desde la caché sincrónicamente (si es válido).
+     */
+    getCachedOperatorSummary: (): OperatorSummaryData | null => {
+        if (cachedOperatorSummary && Date.now() - lastOperatorFetchTimestamp < CACHE_TTL_MS) {
+            return cachedOperatorSummary;
+        }
+        return null;
     },
 
     /**
