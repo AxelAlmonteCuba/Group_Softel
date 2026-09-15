@@ -11,7 +11,7 @@ export class PettyCashController {
   constructor(private readonly pettyCashService: PettyCashService) { }
 
   @Post()
-  @Roles('SUPERVISOR')
+  @Roles('SUPERVISOR', 'ADMINISTRADOR')
   async requestPettyCash(
     @Body() dto: CreatePettyCashDto,
     @GetUser('id') userId: string,
@@ -63,6 +63,12 @@ export class PettyCashController {
   @Roles('ADMINISTRADOR', 'CONTADOR')
   async getAllPettyCash() {
     return await this.pettyCashService.findAll();
+  }
+
+  @Get('saldos-usuarios')
+  @Roles('ADMINISTRADOR', 'CONTADOR')
+  async getUserBalances() {
+    return await this.pettyCashService.getUserBalances();
   }
 
   @Get('usuario/:usuarioId')

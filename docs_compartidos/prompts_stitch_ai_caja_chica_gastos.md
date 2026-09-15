@@ -31,7 +31,8 @@ Este documento contiene los prompts optimizados y validados para **Stitch AI**, 
 7. [Pantalla 5: Detalle y Conciliación de Caja Chica (VALIDADA)](#-pantalla-5-detalle-y-conciliación-de-caja-chica-pantalla-validada)
 8. [Pantalla 6: Bandeja de Auditoría de Gastos (Admin)](#-pantalla-6-bandeja-de-auditoría-de-gastos-admin)
 9. [Pantalla 7: Cuentas por Reembolsar con Filtros (Reutilizable)](#-pantalla-7-gestión-de-reembolsos-directos-con-filtros)
-10. [🚀 Mega-Prompt Maestro (Las 7 Pantallas en 1 Solo Prompt)](#-mega-prompt-maestro-las-7-pantallas-en-un-solo-prompt)
+10. [Pantalla 8: Saldos por Usuario (Admin)](#-pantalla-8-saldos-por-usuario-administrador)
+11. [🚀 Mega-Prompt Maestro (Las 8 Pantallas en 1 Solo Prompt)](#-mega-prompt-maestro-las-8-pantallas-en-un-solo-prompt)
 
 ---
 
@@ -443,7 +444,50 @@ ESTRUCTURA VISUAL DETALLADA:
 
 ---
 
-## 🚀 MEGA-PROMPT MAESTRO (Las 7 Pantallas en un Solo Prompt)
+## 📌 PANTALLA 8: "Saldos por Usuario" (Administrador)
+
+```text
+Diseña una pantalla móvil premium en React Native para "Saldos por Usuario" de Softel Telecomunicaciones (vista del Administrador para ver deudas y reembolsos netos por empleado). Formato vertical móvil (390x844 px). Estilo ultra limpio, corporativo y con DOMINANCIA TOTAL DEL ROJO CORPORATIVO (#B42318).
+
+[REGLAS ESTRICTAS DE COLOR / ANTI-VERDE]:
+- Color primario dominante: #B42318 (Rojo Softel).
+- PROHIBICIÓN ABSOLUTA: CERO BOTONES VERDES. NO USAR FONDOS VERDES.
+- Para balances a favor del trabajador (reembolsos pendientes), usa texto oscuro gris/carbón #252525.
+- Para deudas a favor de la empresa (saldos negativos), usa rojo corporativo #B42318.
+
+ESTRUCTURA VISUAL DETALLADA:
+
+1. Barra Superior (Header estándar):
+   - Izquierda: Botón de retroceso (<) en color oscuro #252525.
+   - Centro: Título "Saldos por Usuario" (#252525, bold, 18px).
+
+2. Feed de Tarjetas de Usuarios (Fondo blanco #FFFFFF, borde fino #E4E4E7, radio 14px):
+   - Tarjeta 1 (Usuario con Deuda a la Empresa):
+     * Encabezado: Avatar circular con icono de usuario en rojo #B42318.
+     * Nombre: "Carlos Mendoza" (bold, 16px, #252525).
+     * Subtítulo: "Supervisor • DNI 76543210".
+     * Fila inferior dividida:
+       - Izquierda: "Cajas cerradas: S/ -150.00" | "Reembolsos directos: S/ 50.00" (texto #71717A, 13px).
+       - Derecha (Alineado a la derecha): Saldo Neto Destacado "S/ -100.00" (bold, 20px, ROJO #B42318) y debajo el texto "Deuda a empresa" con icono de flecha hacia abajo en rojo.
+
+   - Tarjeta 2 (Usuario con Reembolso a Favor):
+     * Encabezado: Avatar circular con icono de usuario en gris oscuro #252525.
+     * Nombre: "Ana Torres" (bold, 16px, #252525).
+     * Subtítulo: "Trabajador • DNI 12345678".
+     * Fila inferior dividida:
+       - Izquierda: "Cajas cerradas: S/ 0.00" | "Reembolsos directos: S/ 45.00" (texto #71717A, 13px).
+       - Derecha (Alineado a la derecha): Saldo Neto Destacado "S/ 45.00" (bold, 20px, GRIS OSCURO #252525, NO VERDE) y debajo el texto "Reembolso pendiente" con icono de flecha hacia arriba.
+
+   - Tarjeta 3 (Usuario Saldado):
+     * Mismo formato de encabezado. Nombre "Luis Pruebas".
+     * Fila inferior dividida:
+       - Izquierda: "Cajas cerradas: S/ 20.00" | "Reembolsos directos: S/ -20.00" (texto #71717A, 13px).
+       - Derecha (Alineado a la derecha): Saldo Neto "S/ 0.00" (texto gris #71717A) y texto "Saldado".
+```
+
+---
+
+## 🚀 MEGA-PROMPT MAESTRO (Las 8 Pantallas en un Solo Prompt)
 
 ```text
 Diseña un flujo de interfaz móvil completo (7 pantallas conectadas en un solo lienzo) en React Native para la aplicación corporativa de telecomunicaciones y energía Softel. Formato vertical móvil (iOS/Android 390x844 px). Estilo ultra limpio, moderno, ejecutivo y con DOMINANCIA TOTAL DEL ROJO CORPORATIVO (#B42318).
@@ -527,4 +571,15 @@ PANTALLAS A GENERAR EN EL MISMO LIENZO:
 - Barra Deslizable de Filtros por Chips: "Todos (4)", "Por Cobrar / Aprobados (2)" (ACTIVO con borde rojo #B42318 y fondo suave #FEE4E2), "Pendientes", "Pagados", "Observados".
 - Lista de Comprobantes: Tarjetas con miniatura de boleta, motivo, categoría, monto y badge de estado en gris neutro. Botón compacto ROJO #B42318 "Pagar".
 - Botón Fijo Inferior: BOTÓN SÓLIDO ANCHO EN ROJO CORPORATIVO #B42318 con texto blanco "+ Registrar Gasto para Reembolso".
+
+--- PANTALLA 8: "Saldos por Usuario" (UserBalancesScreen - Ticket 2) ---
+- Header: Botón retroceso (<), Título "Saldos por Usuario" (#252525, bold, 18px).
+- Feed de Tarjetas de Usuarios: Fondo blanco #FFFFFF con borde fino #E4E4E7 y radio 14px.
+- Elementos internos de la Tarjeta:
+  * Encabezado con Avatar (icono usuario en rojo #B42318 o gris oscuro), Nombre (bold, 16px, #252525) y Subtítulo con el rol y DNI.
+  * Columna izquierda inferior: Desglose sutil "Cajas cerradas" y "Reembolsos directos" en gris #71717A (13px).
+  * Columna derecha inferior (Alineación derecha): Saldo Neto Destacado. 
+    - Si es DEUDA A EMPRESA (negativo): Monto en bold 20px ROJO CORPORATIVO #B42318 con texto "Deuda a empresa" e icono flecha abajo en rojo.
+    - Si es A FAVOR (positivo): Monto en bold 20px GRIS OSCURO #252525 (NO VERDE) con texto "Reembolso pendiente" e icono flecha arriba en oscuro.
+    - Si es SALDADO (cero): Monto gris #71717A y texto "Saldado".
 ```

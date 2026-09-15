@@ -9,6 +9,7 @@ import RequestPettyCashScreen from '@/features/petty-cash/screens/RequestPettyCa
 import PettyCashDetailScreen from '@/features/petty-cash/screens/PettyCashDetailScreen';
 import RegisterExpenseScreen from '@/features/petty-cash/screens/RegisterExpenseScreen';
 import AuditExpensesScreen from '@/features/petty-cash/screens/AuditExpensesScreen';
+import UserBalancesScreen from '@/features/petty-cash/screens/UserBalancesScreen';
 import { colors } from '@/theme/colors';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -96,6 +97,13 @@ const MainStack = () => {
             <Stack.Screen
                 name="AuditExpenses"
                 component={AuditExpensesScreen}
+                options={{ headerShown: false }}
+            />
+
+            {/* UserBalances: Vista de saldos para Admin */}
+            <Stack.Screen
+                name="UserBalances"
+                component={UserBalancesScreen}
                 options={{ headerShown: false }}
             />
         </Stack.Navigator>

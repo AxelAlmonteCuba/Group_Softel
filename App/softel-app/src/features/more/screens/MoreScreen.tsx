@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainStackParamList } from '@/navigation/types';
 import { colors } from '@/theme/colors';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/features/auth/services/authService';
 import HeaderBar from '@/components/layout/HeaderBar';
-import ButtonLogout from '@/components/buttons/ButtonLogout';
+import MenuOptionRow from '@/components/buttons/MenuOptionRow';
 
 interface Props {
     onBack?: () => void;
 }
 
-/**
- * Pantalla "Más" del BottomNavBar.
- *
- * Muestra el perfil del usuario activo y acciones de cuenta,
- * incluyendo el botón de Cerrar Sesión conectado 100% al backend.
- */
 const MoreScreen: React.FC<Props> = ({ onBack }) => {
+    const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
     const usuario = useAuthStore((state) => state.usuario);
     const clearSession = useAuthStore((state) => state.clearSession);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -42,13 +40,10 @@ const MoreScreen: React.FC<Props> = ({ onBack }) => {
                     onPress: async () => {
                         try {
                             setIsLoggingOut(true);
-                            // 1. Llamar al backend para invalidar/notificar logout
                             await authService.logout();
                         } catch (error) {
                             console.log('Aviso: logout notificado con advertencia de red', error);
                         } finally {
-                            // 2. Limpiar la sesión local en Zustand
-                            // Esto cambia isAuthenticated a false y RootNavigator redirige inmediatamente al Login
                             clearSession();
                             setIsLoggingOut(false);
                         }
@@ -58,16 +53,20 @@ const MoreScreen: React.FC<Props> = ({ onBack }) => {
         );
     };
 
+    const handleUnavailable = (feature: string) => {
+        Alert.alert('Próximamente', `El módulo de ${feature} estará disponible en futuras actualizaciones.`);
+    };
+
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-            {/* Cabecera limpia estándar sin UserTopBar */}
+        <View style={{ flex: 1, backgroundColor: '#F4F4F5' }}>
             <HeaderBar
                 title="Más Opciones"
                 onBack={onBack}
                 showBackButton={false}
             />
 
-            <ScrollView style={stylesComponents.containerApp}>
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+                
                 {/* Sección: Información del Usuario */}
                 <Text style={[stylesTexts.litleTitle, { marginBottom: 12 }]}>
                     PERFIL DE USUARIO
@@ -95,16 +94,79 @@ const MoreScreen: React.FC<Props> = ({ onBack }) => {
                     </View>
                 </View>
 
-                {/* Sección: Cuenta y Sesión */}
-                <Text style={[stylesTexts.litleTitle, { marginBottom: 12 }]}>
-                    CUENTA
-                </Text>
 
-                {/* Componente Cerrar Sesión */}
-                <ButtonLogout onPress={handleLogout} isLoading={isLoggingOut} />
+                {/* Main Menu Card */}
+                <Text style={[stylesTexts.litleTitle, { marginBottom: 12 }]}>
+                    OPCIONES
+                </Text>
+                <View style={styles.cardContainer}>
+                    <MenuOptionRow 
+                        title="Motores Electrógenos" 
+                        icon="flash-outline" 
+                        onPress={() => handleUnavailable('Motores')} 
+                    />
+                    
+                    <MenuOptionRow 
+                        title="Gestión de EPP" 
+                        icon="shield-checkmark-outline" 
+                        onPress={() => handleUnavailable('EPP')} 
+                    />
+
+                    {(rol === 'ADMINISTRADOR') && (
+                        <MenuOptionRow 
+                            title="Gestión de Usuarios" 
+                            icon="people-outline" 
+                            onPress={() => navigation.navigate('UserManagement')} 
+                        />
+                    )}
+
+                    {(rol === 'ADMINISTRADOR' || rol === 'CONTADOR') && (
+                        <MenuOptionRow 
+                            title="Saldos por Usuario" 
+                            icon="bar-chart-outline" 
+                            onPress={() => navigation.navigate('UserBalances')} 
+                        />
+                    )}
+
+                    <MenuOptionRow 
+                        title="Configuración" 
+                        icon="settings-outline" 
+                        onPress={() => handleUnavailable('Configuración')} 
+                    />
+
+                    <MenuOptionRow 
+                        title="Ayuda y soporte" 
+                        icon="help-circle-outline" 
+                        onPress={() => handleUnavailable('Soporte')} 
+                        isLast={true}
+                    />
+                </View>
+
+                {/* Logout Card */}
+                <View style={[styles.cardContainer, { marginTop: 16 }]}>
+                    <MenuOptionRow 
+                        title={isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"} 
+                        icon="log-out-outline" 
+                        onPress={handleLogout} 
+                        textColor={colors.primary}
+                        iconColor={colors.primary}
+                        showChevron={false}
+                        isLast={true}
+                    />
+                </View>
             </ScrollView>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    cardContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E4E4E7',
+    }
+});
 
 export default MoreScreen;

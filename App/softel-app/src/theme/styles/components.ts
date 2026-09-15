@@ -885,4 +885,59 @@ export const stylesComponents = StyleSheet.create({
         paddingVertical: 24,
         alignItems: 'center',
     },
+    // ==========================================
+    // MENU OPTION ROW (MoreScreen)
+    // ==========================================
+    menuOptionRowContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        backgroundColor: colors.surface,
+    },
+    menuOptionDivider: {
+        height: 1,
+        backgroundColor: '#F3F4F6',
+        marginLeft: 50,
+    },
+    menuOptionIcon: {
+        marginRight: 12,
+    },
+    // ==========================================
+    // CARD USER BALANCE (Saldos por Usuario)
+    // ==========================================
+    cardUserBalanceContainer: {
+        borderLeftWidth: 4,
+    },
+    cardUserBalanceHeader: {
+        marginBottom: 12,
+    },
+    cardUserBalanceInfo: {
+        flex: 1,
+    },
+    cardUserBalanceBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    cardUserBalanceDivider: {
+        height: 1,
+        backgroundColor: '#E4E4E7',
+        marginBottom: 12,
+    },
+    cardUserBalanceBody: {
+        alignItems: 'center',
+    },
+    cardUserBalanceLeftCol: {
+        flex: 1,
+        marginRight: 8,
+    },
+    cardUserBalanceRightCol: {
+        alignItems: 'flex-end',
+    },
+    cardUserBalanceStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
 });

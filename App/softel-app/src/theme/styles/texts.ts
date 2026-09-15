@@ -180,4 +180,36 @@ export const stylesTexts = StyleSheet.create({
         marginTop: 8,
         marginBottom: 0,
     },
+    // ==========================================
+    // MENU OPTION ROW (MoreScreen)
+    // ==========================================
+    menuOptionText: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: typography.weight.medium,
+    },
+    // ==========================================
+    // CARD USER BALANCE (Saldos por Usuario)
+    // ==========================================
+    cardUserBalanceRole: {
+        marginBottom: 0,
+    },
+    cardUserBalanceRoleMargin: {
+        marginBottom: 4,
+    },
+    cardUserBalanceBadgeText: {
+        fontSize: 11,
+        fontWeight: typography.weight.semiBold,
+    },
+    cardUserBalanceBullet: {
+        fontSize: 16,
+    },
+    cardUserBalanceNetTitle: {
+        fontSize: 20,
+        marginBottom: 2,
+    },
+    cardUserBalanceStatusText: {
+        fontSize: 12,
+        fontWeight: typography.weight.medium,
+    },
 });

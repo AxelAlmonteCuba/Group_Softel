@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/store/authStore';
@@ -9,6 +9,7 @@ import AdminPettyCashScreen from './AdminPettyCashScreen';
 
 interface Props {
     onBack?: () => void;
+    mode?: 'personal' | 'admin';
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -21,10 +22,14 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
  * 2. Determinar si el usuario es Administrador/Contador o Supervisor/Trabajador.
  * 3. Renderizar la pantalla correspondiente manteniendo la navegación limpia.
  */
-const PettyCashScreen: React.FC<Props> = ({ onBack }) => {
+const PettyCashScreen: React.FC<Props> = ({ onBack, mode }) => {
     const navigation = useNavigation<NavigationProp>();
+    const route = useRoute<RouteProp<any, any>>();
     const usuario = useAuthStore((state) => state.usuario);
     const userRole = usuario?.rol ?? 'TRABAJADOR';
+    
+    const finalMode = mode || route?.params?.mode;
+    const forcePersonal = finalMode === 'personal';
 
     const handleBack = () => {
         if (onBack) {
@@ -38,7 +43,7 @@ const PettyCashScreen: React.FC<Props> = ({ onBack }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            {userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR' ? (
+            {(!forcePersonal && (userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR')) ? (
                 <AdminPettyCashScreen onBack={handleBack} />
             ) : (
                 <OperatorPettyCashScreen onBack={handleBack} />

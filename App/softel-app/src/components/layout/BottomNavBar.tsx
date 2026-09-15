@@ -29,7 +29,7 @@ const TABS: TabItem[] = [
     // },
     {
         key: 'caja-chica',
-        label: 'Caja Chica',
+        label: 'Mi Caja Chica',
         iconActive: 'cash',
         iconInactive: 'cash-outline',
     },

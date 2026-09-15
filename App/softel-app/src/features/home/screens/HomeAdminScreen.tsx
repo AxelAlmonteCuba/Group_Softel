@@ -63,14 +63,29 @@ const HomeAdminScreen = () => {
         <CardHome title="Cajas en revisión" value={reviewBoxesCount} iconName="wallet-outline" onPress={() => navigation.navigate('PettyCash')} />
       </View>
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15 }]}>Acciones Rápidas</Text>
+      {/* <ButtonPrimary
+        text="Mi Caja Chica"
+        onPress={() => navigation.navigate('PettyCash', { mode: 'personal' })}
+        iconName="wallet-outline"
+      /> */}
       <ButtonPrimary
         text="Gestionar Usuarios"
         onPress={() => navigation.navigate('UserManagement')}
-        iconName='people-outline'
+        iconName="people-outline"
       />
-      <ButtonSecondary text="Ver Reportes Globales" onPress={() => { }} iconName="stats-chart" />
 
-      {/* BOTON TERCIARIO DESCOMENTAR SI SE QUIERE USAR <ButtonTertiary text="Revisar Cajas Chicas" onPress={() => navigation.navigate('PettyCash')} iconName="wallet-outline" /> */}
+      <ButtonSecondary
+        text="Registrar gasto"
+        onPress={() => navigation.navigate('RegisterExpense')}
+        iconName="receipt-outline"
+      />
+      <View style={{ height: 10 }} />
+
+      {/* <ButtonSecondary text="Ver Reportes Globales" onPress={() => { }} iconName="stats-chart" /> */}
+
+      <ButtonTertiary onPress={() => navigation.navigate('PettyCash', { mode: 'admin' })}
+        iconName="wallet-outline"
+        text="Revisar Cajas Chicas" />
 
 
       <Text style={[stylesTexts.titleHome, { paddingBottom: 15, marginTop: 15 }]}>Actividad Reciente</Text>

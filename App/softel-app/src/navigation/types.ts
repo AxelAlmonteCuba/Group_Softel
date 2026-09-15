@@ -27,7 +27,7 @@ export type MainStackParamList = {
         mode: 'create' | 'edit' | 'view';
         user?: User;
     };
-    PettyCash: undefined;
+    PettyCash: { mode?: 'personal' | 'admin' } | undefined;
     RequestPettyCash: undefined;
     PettyCashDetail: { id?: string } | undefined;
     RegisterExpense: {
@@ -40,4 +40,5 @@ export type MainStackParamList = {
         cajaStatus?: string;
         cajaJustification?: string;
     } | undefined;
+    UserBalances: undefined;
 };

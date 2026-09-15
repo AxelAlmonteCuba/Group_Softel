@@ -26,7 +26,7 @@ const HomeScreen = () => {
         {activeTab === 'inicio' ? (
           isAdmin ? <HomeAdminScreen /> : <HomeOperatorScreen />
         ) : activeTab === 'caja-chica' ? (
-          <PettyCashScreen onBack={() => setActiveTab('inicio')} />
+          <PettyCashScreen onBack={() => setActiveTab('inicio')} mode="personal" />
         ) : activeTab === 'mas' ? (
           <MoreScreen onBack={() => setActiveTab('inicio')} />
         ) : (

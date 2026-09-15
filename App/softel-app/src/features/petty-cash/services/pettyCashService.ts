@@ -345,6 +345,20 @@ export const pettyCashService = {
         return null;
     },
 
+    /**
+     * Obtiene el consolidado de saldos de todos los usuarios
+     * Exclusivo para Administrador / Contador.
+     */
+    getUserBalances: async (): Promise<any[]> => {
+        try {
+            const response = await api.get<any[]>('/cajas-chicas/saldos-usuarios');
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching user balances:', error);
+            throw new Error(error.response?.data?.mensaje || 'Error de conexión al obtener saldos');
+        }
+    },
+
     invalidateCache: invalidatePettyCashCache,
 };
 

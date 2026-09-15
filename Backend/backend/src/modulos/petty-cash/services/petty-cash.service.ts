@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PettyCash } from '../entities/petty-cash.entity';
 import { Expense } from '../entities/expense.entity';
+import { User } from '../../users/user.entity';
 import { CreatePettyCashDto } from '../dtos/create-petty-cash.dto';
 
 @Injectable()
@@ -447,6 +448,64 @@ export class PettyCashService {
         }
         : null,
     };
+  }
+
+  /**
+   * Obtiene los saldos netos por usuario (Ticket 2).
+   * Suma el saldo_final de cajas CERRADAS y los gastos directos APROBADOS no reembolsados.
+   */
+  async getUserBalances(): Promise<any[]> {
+    // 1. Obtener todos los usuarios activos
+    const users = await this.dataSource.manager.find(User, {
+      where: { estado: 'ACTIVO' },
+    });
+
+    // 2. Suma de saldo_final en cajas chicas CERRADAS
+    const pettyCashRaw = await this.pettyCashRepository
+      .createQueryBuilder('caja')
+      .select('caja.usuario_encargado_id', 'userId')
+      .addSelect('COALESCE(SUM(caja.saldo_final), 0)', 'totalCaja')
+      .where("caja.estado = 'CERRADA'")
+      .groupBy('caja.usuario_encargado_id')
+      .getRawMany();
+
+    // 3. Suma de montos de gastos directos APROBADOS y no reembolsados
+    const directExpensesRaw = await this.expenseRepository
+      .createQueryBuilder('gasto')
+      .select('gasto.usuario_gasto_id', 'userId')
+      .addSelect('COALESCE(SUM(gasto.monto), 0)', 'totalDirect')
+      .where('gasto.caja_chica_id IS NULL')
+      .andWhere("gasto.estado = 'APROBADO'")
+      .andWhere('gasto.reembolsado = false')
+      .groupBy('gasto.usuario_gasto_id')
+      .getRawMany();
+
+    const pettyCashMap = new Map<string, number>();
+    pettyCashRaw.forEach((row) => pettyCashMap.set(row.userId, Number(row.totalCaja)));
+
+    const directExpensesMap = new Map<string, number>();
+    directExpensesRaw.forEach((row) => directExpensesMap.set(row.userId, Number(row.totalDirect)));
+
+    const balances = users.map((user) => {
+      const cajaBalance = pettyCashMap.get(user.id) || 0;
+      const directBalance = directExpensesMap.get(user.id) || 0;
+      const netBalance = cajaBalance + directBalance;
+
+      return {
+        userId: user.id,
+        userNames: `${user.nombres} ${user.apellidos}`,
+        document: user.documento_identidad,
+        role: user.rol,
+        cajaBalance,
+        directBalance,
+        netBalance,
+      };
+    });
+
+    // Solo retornamos usuarios con saldo neto distinto de 0 y ordenamos de mayor deuda de la empresa a mayor deuda del empleado
+    return balances
+      .filter((b) => b.netBalance !== 0)
+      .sort((a, b) => b.netBalance - a.netBalance);
   }
 }
 
