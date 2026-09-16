@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "340043812490",
+    "project_id": "softel-syncrix",
+    "storage_bucket": "softel-syncrix.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340043812490:android:b74dd499266c0bee1d2773",
+        "android_client_info": {
+          "package_name": "com.softel.syncrix"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1B2g2msqkLquOl2E4cs3j9fmvd_xpEAk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
