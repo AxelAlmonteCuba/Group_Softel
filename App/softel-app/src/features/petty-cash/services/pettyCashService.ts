@@ -359,6 +359,17 @@ export const pettyCashService = {
         }
     },
 
+    liquidateUser: async (userId: string): Promise<any> => {
+        try {
+            const response = await api.post(`/cajas-chicas/liquidar/usuario/${userId}`)
+            invalidatePettyCashCache() // ques hace esto?
+            return response.data;
+        } catch (error: any) {
+            console.error('Error fetching user balances:', error);
+            throw new Error(error.response?.data?.mensaje || 'Error de conexión al obtener saldos');
+        }
+    },
+
     invalidateCache: invalidatePettyCashCache,
 };
 

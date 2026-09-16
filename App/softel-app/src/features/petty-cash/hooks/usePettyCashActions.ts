@@ -24,7 +24,7 @@ export interface ActionButtonConfig {
 }
 
 interface UsePettyCashActionsProps {
-    caja: PettyCashResponse;
+    caja: PettyCashResponse | null;
     onStatusUpdated?: (updatedCaja: PettyCashResponse) => void;
 }
 
@@ -45,6 +45,8 @@ export const usePettyCashActions = ({
         primary: ActionButtonConfig | null;
         secondary: ActionButtonConfig | null;
     } => {
+        if (!caja) return { primary: null, secondary: null };
+
         const role = usuario?.rol || 'TRABAJADOR';
 
         // 1. Si NO es Administrador:
@@ -150,7 +152,9 @@ export const usePettyCashActions = ({
 
         // Si es navegación a Registrar Gasto
         if (config.type === 'NAVIGATE') {
-            navigation.navigate('RegisterExpense', { cajaId: caja.id });
+            if (caja) {
+                navigation.navigate('RegisterExpense', { cajaId: caja.id });
+            }
             return;
         }
 
@@ -160,7 +164,7 @@ export const usePettyCashActions = ({
             {
                 text: 'Confirmar',
                 onPress: async () => {
-                    if (!config.action) return;
+                    if (!config.action || !caja) return;
 
                     try {
                         setActionLoading(true);
@@ -168,27 +172,11 @@ export const usePettyCashActions = ({
                         onStatusUpdated?.(updated);
                         Alert.alert('Éxito', 'Estado de la caja chica actualizado correctamente.');
                     } catch (error: any) {
-                        // Fallback si es objeto mock local de previsualización
-                        if (!caja.id || caja.id === '2026-004') {
-                            const nextStatusMap: Record<string, PettyCashStatus> = {
-                                APROBAR: 'APROBADA',
-                                ABRIR: 'ABIERTA',
-                                CERRAR: 'CERRADA',
-                                LIQUIDAR: 'LIQUIDADA',
-                                REVISAR: 'EN_REVISION',
-                                RECHAZAR: 'RECHAZADA',
-                            };
-                            const nextStatus = nextStatusMap[config.action] || caja.status;
-                            const localUpdated: PettyCashResponse = { ...caja, status: nextStatus };
-                            onStatusUpdated?.(localUpdated);
-                            Alert.alert('Éxito', `Caja actualizada a estado ${nextStatus}.`);
-                        } else {
-                            const msg =
-                                error?.response?.data?.mensaje ||
-                                error?.message ||
-                                'Error al actualizar el estado de la caja.';
-                            Alert.alert('Error', msg);
-                        }
+                        const msg =
+                            error?.response?.data?.mensaje ||
+                            error?.message ||
+                            'Error al actualizar el estado de la caja.';
+                        Alert.alert('Error', msg);
                     } finally {
                         setActionLoading(false);
                     }

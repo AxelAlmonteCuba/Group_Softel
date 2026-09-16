@@ -27,7 +27,12 @@ export type MainStackParamList = {
         mode: 'create' | 'edit' | 'view';
         user?: User;
     };
-    PettyCash: { mode?: 'personal' | 'admin' } | undefined;
+    PettyCash: {
+        mode?: 'personal' | 'admin' | 'history';
+        targetUserId?: string;
+        targetUserName?: string;
+        netBalance?: number;
+    } | undefined;
     RequestPettyCash: undefined;
     PettyCashDetail: { id?: string } | undefined;
     RegisterExpense: {

@@ -20,60 +20,7 @@ import { useAuthStore } from '@/store/authStore';
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 type RouteProps = RouteProp<MainStackParamList, 'PettyCashDetail'>;
 
-// Gastos por defecto para previsualización cuando no hay datos remotos
-const defaultExpenses: ExpenseItemResponse[] = [
-    {
-        id: 'mock-1',
-        amount: 180.0,
-        reason: 'Bobina de cable drop 50',
-        receiptUrl: '',
-        status: 'APROBADO',
-        expenseDate: '2026-09-03',
-        createdAt: '2026-09-03T10:00:00.000Z',
-        category: { id: 2, name: 'Factura F001-4921' },
-    },
-    {
-        id: 'mock-2',
-        amount: 25.0,
-        reason: 'Pasaje interurban',
-        receiptUrl: '',
-        status: 'PENDIENTE',
-        expenseDate: '2026-09-03',
-        createdAt: '2026-09-03T11:00:00.000Z',
-        category: { id: 1, name: 'Boleto Viaje' },
-    },
-];
-
-// Objeto por defecto para previsualización / fallback cuando no hay datos
-const defaultCaja: PettyCashResponse = {
-    id: '2026-004',
-    assignedAmount: 1500,
-    currentBalance: 1320,
-    finalBalance: 0,
-    approvedAmount: 180,
-    pendingAmount: 25,
-    effectiveBalance: 1295,
-    status: 'ABIERTA',
-    justification: 'Obra Norte',
-    projectId: null,
-    openingDate: '2026-09-01T08:00:00.000Z',
-    closingDate: null,
-    createdAt: '2026-09-01T08:00:00.000Z',
-    managerUser: {
-        id: 'user-1',
-        nombres: 'Juan',
-        apellidos: 'Pérez',
-        documento_identidad: '71234567',
-        cargo: 'Supervisor',
-        rol: 'SUPERVISOR',
-    },
-    evaluatorUser: {
-        id: 'admin-1',
-        nombres: 'Admin',
-        apellidos: 'Softel',
-        cargo: 'Administrador General',
-    },
-};
+// Datos de mock eliminados. Todo es 100% dinámico desde la API.
 
 /**
  * Pantalla de Detalle de Caja Chica (compartida para todos los roles).
@@ -88,7 +35,7 @@ const PettyCashDetailScreen: React.FC = () => {
 
     const [caja, setCaja] = useState<PettyCashResponse | null>(null);
     const [expenses, setExpenses] = useState<ExpenseItemResponse[]>([]);
-    const [loading, setLoading] = useState<boolean>(!!cajaId);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const loadData = useCallback(() => {
         if (!cajaId) return;
@@ -121,29 +68,44 @@ const PettyCashDetailScreen: React.FC = () => {
 
     useFocusEffect(loadData);
 
-    const cajaActiva = caja || defaultCaja;
-    const expensesList = cajaId ? expenses : defaultExpenses;
-
     const {
         actionConfig,
         secondaryActionConfig,
         actionLoading,
         executeAction,
     } = usePettyCashActions({
-        caja: cajaActiva,
+        caja: caja,
         onStatusUpdated: (updated) => setCaja(updated),
     });
 
-    const isEncargado = usuario?.id === cajaActiva.managerUser?.id;
+    const isEncargado = usuario?.id === caja?.managerUser?.id;
     const isPersonalCampo = usuario?.rol === 'SUPERVISOR' || usuario?.rol === 'TRABAJADOR';
-    const canRegisterExpense = cajaActiva.status === 'ABIERTA' && (isEncargado || isPersonalCampo);
+    const canRegisterExpense = caja?.status === 'ABIERTA' && (isEncargado || isPersonalCampo);
 
     const handleRegisterExpense = () => {
+        if (!caja) return;
         navigation.navigate('RegisterExpense', {
             mode: 'create',
-            cajaId: cajaActiva.id,
+            cajaId: caja.id,
         });
     };
+
+    if (loading || !caja) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <HeaderBar title="Detalle de Caja Chica" onBack={() => navigation.goBack()} />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    {loading ? (
+                        <ActivityIndicator size="large" color={colors.primary} />
+                    ) : (
+                        <View style={{ padding: 20 }}>
+                            <ButtonPrimary text="Volver" onPress={() => navigation.goBack()} />
+                        </View>
+                    )}
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -159,61 +121,55 @@ const PettyCashDetailScreen: React.FC = () => {
                 contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}
                 showsVerticalScrollIndicator={false}
             >
-                {loading ? (
-                    <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                ) : (
-                    <View style={{ marginTop: 4 }}>
-                        {/* 1. Tarjeta informativa de cabecera */}
-                        <CardDetailPettyCash caja={cajaActiva} />
+                <View style={{ marginTop: 4 }}>
+                    {/* 1. Tarjeta informativa de cabecera */}
+                    <CardDetailPettyCash caja={caja} />
 
-                        {/* 2. Tarjeta con datos de montos y barra de progreso */}
-                        <CardAmountsPettyCash caja={cajaActiva} />
+                    {/* 2. Tarjeta con datos de montos y barra de progreso */}
+                    <CardAmountsPettyCash caja={caja} />
 
-                        {/* Botón Outline: Finalizar y Enviar a Revisión encima de Comprobantes Rendidos */}
-                        {secondaryActionConfig && (
-                            <View style={{ marginTop: 14, marginBottom: 4 }}>
-                                <ButtonOutline
-                                    text={secondaryActionConfig.label}
-                                    iconName={secondaryActionConfig.icon}
-                                    onPress={() => executeAction(secondaryActionConfig)}
-                                    loading={actionLoading}
-                                />
-                            </View>
-                        )}
+                    {/* Botón Outline: Finalizar y Enviar a Revisión encima de Comprobantes Rendidos */}
+                    {secondaryActionConfig && (
+                        <View style={{ marginTop: 14, marginBottom: 4 }}>
+                            <ButtonOutline
+                                text={secondaryActionConfig.label}
+                                iconName={secondaryActionConfig.icon}
+                                onPress={() => executeAction(secondaryActionConfig)}
+                                loading={actionLoading}
+                            />
+                        </View>
+                    )}
 
-                        {/* 3. Bloque de Comprobantes Rendidos (HomeOperatorScreen) */}
-                        <CardRenderedExpenses
-                            expenses={expensesList}
-                            totalCount={expensesList.length}
-                            onPressSeeAll={() => {
-                                navigation.navigate('AuditExpenses', {
-                                    cajaId: cajaActiva.id,
-                                    cajaStatus: cajaActiva.status,
-                                    cajaJustification: cajaActiva.justification || undefined,
-                                });
-                            }}
-                            onPressExpense={(expense) => {
-                                if (
-                                    expense.status === 'OBSERVADO' &&
-                                    (usuario?.rol === 'SUPERVISOR' ||
-                                        usuario?.rol === 'ADMINISTRADOR' ||
-                                        usuario?.rol === 'TRABAJADOR')
-                                ) {
-                                    if (cajaActiva.status === 'LIQUIDADA' || cajaActiva.status === 'CERRADA') {
-                                        return;
-                                    }
-                                    navigation.navigate('RegisterExpense', {
-                                        mode: 'edit',
-                                        cajaId: cajaActiva.id,
-                                        expense,
-                                    });
+                    {/* 3. Bloque de Comprobantes Rendidos (HomeOperatorScreen) */}
+                    <CardRenderedExpenses
+                        expenses={expenses}
+                        totalCount={expenses.length}
+                        onPressSeeAll={() => {
+                            navigation.navigate('AuditExpenses', {
+                                cajaId: caja.id,
+                                cajaStatus: caja.status,
+                                cajaJustification: caja.justification || undefined,
+                            });
+                        }}
+                        onPressExpense={(expense) => {
+                            if (
+                                expense.status === 'OBSERVADO' &&
+                                (usuario?.rol === 'SUPERVISOR' ||
+                                    usuario?.rol === 'ADMINISTRADOR' ||
+                                    usuario?.rol === 'TRABAJADOR')
+                            ) {
+                                if (caja.status === 'LIQUIDADA' || caja.status === 'CERRADA') {
+                                    return;
                                 }
-                            }}
-                        />
-                    </View>
-                )}
+                                navigation.navigate('RegisterExpense', {
+                                    mode: 'edit',
+                                    cajaId: caja.id,
+                                    expense,
+                                });
+                            }
+                        }}
+                    />
+                </View>
             </ScrollView>
 
             {/* 4. Botón Flotante '+' para registrar gastos en caja abierta */}

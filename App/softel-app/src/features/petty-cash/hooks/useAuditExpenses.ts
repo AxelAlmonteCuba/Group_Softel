@@ -73,6 +73,7 @@ export const useAuditExpenses = (
     isAdmin = false,
     initialCajaStatus?: string,
     isDirectOnly = false,
+    targetUserId?: string,
 ) => {
     const usuario = useAuthStore((state) => state.usuario);
     const [cajaStatus, setCajaStatus] = useState<string | undefined>(initialCajaStatus);
@@ -81,8 +82,8 @@ export const useAuditExpenses = (
         ? (isAdmin
             ? pettyCashService.getCachedAllDirectExpenses()
             : usuario?.id
-            ? pettyCashService.getCachedUserDirectExpenses(usuario.id)
-            : null)
+                ? pettyCashService.getCachedUserDirectExpenses(usuario.id)
+                : null)
         : null;
 
     const [expenses, setExpenses] = useState<AuditExpenseData[]>(
@@ -121,8 +122,8 @@ export const useAuditExpenses = (
                 let rawExpenses: ExpenseItemResponse[] = [];
                 if (isAdmin) {
                     rawExpenses = await pettyCashService.getAllDirectExpenses(forceNetwork || isRefresh);
-                } else if (usuario?.id) {
-                    rawExpenses = await pettyCashService.getPendingDirectReimbursementsByUser(usuario.id, forceNetwork || isRefresh);
+                } else if (targetUserId || usuario?.id) {
+                    rawExpenses = await pettyCashService.getPendingDirectReimbursementsByUser(targetUserId || usuario!.id, forceNetwork || isRefresh);
                 }
                 const mapped = (rawExpenses || []).map((e) => mapBackendExpenseToAuditData(e, true));
                 setExpenses(mapped);
@@ -148,7 +149,7 @@ export const useAuditExpenses = (
             Alert.alert(
                 'Error al cargar gastos',
                 error?.response?.data?.mensaje ||
-                    'No se pudieron cargar los comprobantes desde el servidor.',
+                'No se pudieron cargar los comprobantes desde el servidor.',
             );
         } finally {
             setLoading(false);
@@ -272,8 +273,7 @@ export const useAuditExpenses = (
         if (!cleanComment) {
             Alert.alert(
                 'Comentario requerido',
-                `Debes ingresar una justificación para ${
-                    auditDecision === 'OBSERVADO' ? 'observar' : 'rechazar'
+                `Debes ingresar una justificación para ${auditDecision === 'OBSERVADO' ? 'observar' : 'rechazar'
                 } el comprobante.`,
             );
             return;
@@ -292,10 +292,10 @@ export const useAuditExpenses = (
                 prev.map((item) =>
                     item.id === auditExpenseId
                         ? {
-                              ...item,
-                              estado: auditDecision,
-                              comentariosAuditoria: cleanComment,
-                          }
+                            ...item,
+                            estado: auditDecision,
+                            comentariosAuditoria: cleanComment,
+                        }
                         : item,
                 ),
             );
@@ -310,7 +310,7 @@ export const useAuditExpenses = (
             Alert.alert(
                 'Error',
                 error?.response?.data?.mensaje ||
-                    `No se pudo registrar la decisión de ${auditDecision}.`,
+                `No se pudo registrar la decisión de ${auditDecision}.`,
             );
         } finally {
             setSubmittingAudit(false);
@@ -352,7 +352,7 @@ export const useAuditExpenses = (
                             Alert.alert(
                                 'Error al liquidar',
                                 error?.response?.data?.mensaje ||
-                                    'No se pudo liquidar el reembolso. Intenta nuevamente.',
+                                'No se pudo liquidar el reembolso. Intenta nuevamente.',
                             );
                         } finally {
                             setActionLoadingId(null);

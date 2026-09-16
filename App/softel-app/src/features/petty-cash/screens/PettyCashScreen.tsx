@@ -9,7 +9,7 @@ import AdminPettyCashScreen from './AdminPettyCashScreen';
 
 interface Props {
     onBack?: () => void;
-    mode?: 'personal' | 'admin';
+    mode?: 'personal' | 'admin' | 'history';
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -27,9 +27,15 @@ const PettyCashScreen: React.FC<Props> = ({ onBack, mode }) => {
     const route = useRoute<RouteProp<any, any>>();
     const usuario = useAuthStore((state) => state.usuario);
     const userRole = usuario?.rol ?? 'TRABAJADOR';
-    
+
+    const targetUserId = route?.params?.targetUserId;
+    const targetUserName = route?.params?.targetUserName;
+    const netBalance = route?.params?.netBalance;
+
     const finalMode = mode || route?.params?.mode;
     const forcePersonal = finalMode === 'personal';
+    const forceHistory = finalMode === 'history';
+
 
     const handleBack = () => {
         if (onBack) {
@@ -43,10 +49,15 @@ const PettyCashScreen: React.FC<Props> = ({ onBack, mode }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            {(!forcePersonal && (userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR')) ? (
+            {(!forcePersonal && !forceHistory && (userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR')) ? (
                 <AdminPettyCashScreen onBack={handleBack} />
             ) : (
-                <OperatorPettyCashScreen onBack={handleBack} />
+                <OperatorPettyCashScreen
+                    onBack={handleBack}
+                    targetUserId={targetUserId}
+                    targetUserName={targetUserName}
+                    netBalance={netBalance}
+                />
             )}
         </View>
     );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
@@ -16,10 +17,15 @@ import PhotoPreviewModal from '@/components/modals/PhotoPreviewModal';
 import SegmentedDualButton from '@/components/buttons/SegmentedDualButton';
 import FilterChips from '@/components/inputs/FilterChips';
 import { useOperatorPettyCash, OperatorTab } from '../hooks/useOperatorPettyCash';
+import ButtonPrimary from '@/components/buttons/ButtonPrimary';
+import { pettyCashService } from '../services/pettyCashService';
 
 interface Props {
     onBack?: () => void;
     onHistoryPress?: () => void;
+    targetUserId?: string;
+    targetUserName?: string;
+    netBalance?: number;
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -28,7 +34,7 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
  * Pantalla para "Mi Caja Chica" y "Mis Reembolsos Directos" (Supervisor y Trabajador).
  * Toda la lógica de consulta, filtros reactivos, historial y estados se delega al hook useOperatorPettyCash.
  */
-const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) => {
+const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress, targetUserId, targetUserName, netBalance }) => {
     const navigation = useNavigation<NavigationProp>();
     const {
         selectedTab,
@@ -55,10 +61,13 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Cabecera limpia estándar reutilizable */}
             <HeaderBar
-                title={selectedTab === 'caja' ? 'Mi Caja Chica' : 'Mis Reembolsos Directos'}
+                title={targetUserId
+                    ? `Historial de ${targetUserName?.split(' ')[0]}`
+                    : selectedTab === 'caja' ? 'Mi Caja Chica' : 'Mis Reembolsos Directos'
+                }
                 onBack={onBack}
                 rightIcon={selectedTab === 'caja' ? 'time-outline' : undefined}
                 onRightPress={selectedTab === 'caja' ? onHistoryPress : undefined}
@@ -114,24 +123,29 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
             >
                 {selectedTab === 'caja' ? (
                     <>
-                        {/* 1. Validación de Caja en Proceso */}
-                        {loading ? (
-                            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
-                                <ActivityIndicator size="small" color={colors.primary} />
-                            </View>
-                        ) : cajaEnProceso ? (
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
-                                style={{ marginTop: 4, marginBottom: 12 }}
-                            >
-                                <CardActivePettyCash caja={cajaEnProceso} />
-                            </TouchableOpacity>
-                        ) : (
-                            <View style={{ marginTop: 4, marginBottom: 24 }}>
-                                <CardEmptyPettyCash onPressRequest={handleSolicitarApertura} />
-                            </View>
+                        {/* 1. Validación de Caja en Proceso (Solo si no es modo Historial) */}
+                        {!targetUserId && (
+                            loading ? (
+                                <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                </View>
+                            ) : cajaEnProceso ? (
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
+                                    style={{ marginTop: 4, marginBottom: 12 }}
+                                >
+                                    <CardActivePettyCash caja={cajaEnProceso} />
+                                </TouchableOpacity>
+                            ) : (
+                                <View style={{ marginTop: 4, marginBottom: 24 }}>
+                                    <CardEmptyPettyCash onPressRequest={handleSolicitarApertura} />
+                                </View>
+                            )
                         )}
+
+
+
 
                         {/* 2. Cabecera y Lista de Historial: SOLO se muestran si existen cajas pasadas */}
                         {historyCajas.length > 0 && (
@@ -214,13 +228,58 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress }) =>
                 <View style={{ height: 30 }} />
             </ScrollView>
 
+            {targetUserId && (
+                <View style={{ 
+                    padding: 16, 
+                    backgroundColor: colors.background,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border
+                }}>
+                    <ButtonPrimary
+                        text={
+                            (netBalance || 0) > 0
+                                ? `Reembolsar al Usuario: S/ ${Math.abs(netBalance || 0).toFixed(2)}`
+                                : (netBalance || 0) < 0
+                                    ? `Devolución a Empresa: S/ ${Math.abs(netBalance || 0).toFixed(2)}`
+                                    : `Liquidar (Saldos en 0)`
+                        }
+                        iconName="checkmark-done-outline"
+                        onPress={() => {
+                            const isPositive = (netBalance || 0) > 0;
+                            const isNegative = (netBalance || 0) < 0;
+                            const amount = Math.abs(netBalance || 0).toFixed(2);
+                            
+                            const confirmMessage = isPositive
+                                ? `¿Confirmas que ya transferiste S/ ${amount} al colaborador para liquidar su deuda?`
+                                : isNegative
+                                    ? `¿Confirmas que el colaborador ya devolvió los S/ ${amount} sobrantes a la empresa?`
+                                    : `¿Confirmas la liquidación consolidada sin saldos pendientes?`;
+
+                            Alert.alert("Liquidar Saldos", confirmMessage, [
+                                { text: "Cancelar", style: "cancel" },
+                                {
+                                    text: "Liquidar", onPress: async () => {
+                                        try {
+                                            await pettyCashService.liquidateUser(targetUserId)
+                                            navigation.goBack()
+                                        } catch (error) {
+                                            Alert.alert("Error", "No se pudo liquidar al usuario")
+                                        }
+                                    }
+                                }
+                            ]);
+                        }}
+                    />
+                </View>
+            )}
+
             {/* Modal de Previsualización de Foto */}
             <PhotoPreviewModal
                 visible={!!directExpenses.previewImage}
                 imageUrl={directExpenses.previewImage}
                 onClose={directExpenses.closePreview}
             />
-        </View>
+        </SafeAreaView>
     );
 };
 

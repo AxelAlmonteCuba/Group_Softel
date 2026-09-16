@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { stylesComponents } from '@/theme/styles';
@@ -15,7 +16,7 @@ export default function UserBalancesScreen({ navigation }: any) {
         try {
             setIsLoading(true);
             const rawData = await pettyCashService.getUserBalances();
-            
+
             const mappedData: UserBalance[] = rawData.map((item: any) => ({
                 userId: item.userId,
                 document: item.document,
@@ -25,7 +26,7 @@ export default function UserBalancesScreen({ navigation }: any) {
                 directBalance: Number(item.directBalance) || 0,
                 netBalance: Number(item.netBalance) || 0,
             }));
-            
+
             setBalances(mappedData);
         } catch (error) {
             console.error('Error al cargar saldos:', error);
@@ -34,21 +35,32 @@ export default function UserBalancesScreen({ navigation }: any) {
         }
     };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [])
+    );
 
     const renderItem = ({ item }: { item: UserBalance }) => (
         <View style={{ marginBottom: 12 }}>
-            <CardUserBalance data={item} />
+            <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('PettyCash', {
+                    mode: 'history',
+                    targetUserId: item.userId,
+                    targetUserName: item.userNames,
+                    netBalance: item.netBalance,
+                })}>
+                <CardUserBalance data={item} />
+            </TouchableOpacity>
         </View>
     );
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <HeaderBar 
-                title="Saldos por Usuario" 
-                onBack={() => navigation.goBack()} 
+            <HeaderBar
+                title="Saldos por Usuario"
+                onBack={() => navigation.goBack()}
             />
 
             <View style={[stylesComponents.containerApp, { paddingTop: 16 }]}>

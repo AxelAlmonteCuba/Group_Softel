@@ -53,14 +53,15 @@ const parseOperatorBoxes = (data: PettyCashResponse[]) => {
  * Hook personalizado que encapsula el estado, carga de caja chica activa,
  * historial de cajas finalizadas y rendición de reembolsos directos para supervisores y operarios.
  */
-export const useOperatorPettyCash = () => {
+export const useOperatorPettyCash = (targetUserId?: string) => {
     const usuario = useAuthStore((state) => state.usuario);
+    const idAConsultar = targetUserId || usuario?.id;
 
     const [selectedTab, setSelectedTab] = useState<OperatorTab>('caja');
     const [selectedExpenseFilter, setSelectedExpenseFilter] = useState<string>('TODOS');
 
     // Inicialización instantánea desde caché en memoria si existe
-    const cachedBoxes = usuario?.id ? pettyCashService.getCachedUserBoxes(usuario.id) : null;
+    const cachedBoxes = idAConsultar ? pettyCashService.getCachedUserBoxes(idAConsultar) : null;
     const initialParsed = cachedBoxes ? parseOperatorBoxes(cachedBoxes) : null;
 
     const [loading, setLoading] = useState<boolean>(!initialParsed);
@@ -69,7 +70,7 @@ export const useOperatorPettyCash = () => {
     const [historyCajas, setHistoryCajas] = useState<HistoryPettyCashItem[]>(initialParsed?.transformedHistory ?? []);
 
     // Hook para reembolsos directos del usuario (modo consulta personal)
-    const directExpenses = useAuditExpenses(undefined, false, undefined, true);
+    const directExpenses = useAuditExpenses(undefined, false, undefined, true, targetUserId);
 
     // Conteos reactivos por estado para los chips de Reembolsos Directos
     const pendientesCount = useMemo(
@@ -141,9 +142,9 @@ export const useOperatorPettyCash = () => {
 
     // Consulta y formateo de cajas asignadas al usuario
     const fetchCajas = useCallback(async (force = false) => {
-        if (!usuario?.id) return;
+        if (!idAConsultar) return;
         try {
-            const data = await pettyCashService.getByUser(usuario.id, force);
+            const data = await pettyCashService.getByUser(idAConsultar, force);
             const { enProceso, transformedHistory } = parseOperatorBoxes(data);
             setCajaEnProceso(enProceso);
             setHistoryCajas(transformedHistory);
@@ -153,7 +154,7 @@ export const useOperatorPettyCash = () => {
         } finally {
             setLoading(false);
         }
-    }, [usuario?.id]);
+    }, [idAConsultar]);
 
     const fetchDirectExpensesRef = useRef(directExpenses.fetchExpenses);
     fetchDirectExpensesRef.current = directExpenses.fetchExpenses;
