@@ -34,7 +34,10 @@ export type MainStackParamList = {
         netBalance?: number;
     } | undefined;
     RequestPettyCash: undefined;
-    PettyCashDetail: { id?: string } | undefined;
+    PettyCashDetail: { 
+        id?: string;
+        mode?: 'registro' | 'revision';
+    } | undefined;
     RegisterExpense: {
         mode?: 'create' | 'edit';
         cajaId?: string;

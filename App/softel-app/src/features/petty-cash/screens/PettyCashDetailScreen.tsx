@@ -68,6 +68,8 @@ const PettyCashDetailScreen: React.FC = () => {
 
     useFocusEffect(loadData);
 
+    const viewMode = route.params?.mode || 'registro';
+
     const {
         actionConfig,
         secondaryActionConfig,
@@ -76,11 +78,12 @@ const PettyCashDetailScreen: React.FC = () => {
     } = usePettyCashActions({
         caja: caja,
         onStatusUpdated: (updated) => setCaja(updated),
+        viewMode,
     });
 
     const isEncargado = usuario?.id === caja?.managerUser?.id;
     const isPersonalCampo = usuario?.rol === 'SUPERVISOR' || usuario?.rol === 'TRABAJADOR';
-    const canRegisterExpense = caja?.status === 'ABIERTA' && (isEncargado || isPersonalCampo);
+    const canRegisterExpense = caja?.status === 'ABIERTA' && (isEncargado || isPersonalCampo) && viewMode !== 'revision';
 
     const handleRegisterExpense = () => {
         if (!caja) return;

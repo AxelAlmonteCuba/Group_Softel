@@ -58,7 +58,7 @@ const HomeAdminScreen = () => {
         return;
       }
     }
-    
+
     // 2. Fallback: aseguramos que el resumen del dashboard esté cargado
     try {
       const summary = await dashboardService.getAdminSummary(false);
@@ -97,13 +97,13 @@ const HomeAdminScreen = () => {
         onPress={() => navigation.navigate('PettyCash', { mode: 'personal' })}
         iconName="wallet-outline"
       /> */}
-      <ButtonPrimary
+      {/*   <ButtonPrimary
         text="Gestionar Usuarios"
         onPress={() => navigation.navigate('UserManagement')}
         iconName="people-outline"
-      />
+      />*/}
 
-      <ButtonSecondary
+      <ButtonPrimary
         text="Registrar gasto"
         onPress={handleRegisterExpense}
         iconName="receipt-outline"

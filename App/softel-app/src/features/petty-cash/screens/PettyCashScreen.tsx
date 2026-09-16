@@ -10,6 +10,7 @@ import AdminPettyCashScreen from './AdminPettyCashScreen';
 interface Props {
     onBack?: () => void;
     mode?: 'personal' | 'admin' | 'history';
+    isTabContext?: boolean;
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -22,7 +23,7 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
  * 2. Determinar si el usuario es Administrador/Contador o Supervisor/Trabajador.
  * 3. Renderizar la pantalla correspondiente manteniendo la navegación limpia.
  */
-const PettyCashScreen: React.FC<Props> = ({ onBack, mode }) => {
+const PettyCashScreen: React.FC<Props> = ({ onBack, mode, isTabContext }) => {
     const navigation = useNavigation<NavigationProp>();
     const route = useRoute<RouteProp<any, any>>();
     const usuario = useAuthStore((state) => state.usuario);
@@ -50,13 +51,14 @@ const PettyCashScreen: React.FC<Props> = ({ onBack, mode }) => {
     return (
         <View style={{ flex: 1 }}>
             {(!forcePersonal && !forceHistory && (userRole === 'ADMINISTRADOR' || userRole === 'CONTADOR')) ? (
-                <AdminPettyCashScreen onBack={handleBack} />
+                <AdminPettyCashScreen onBack={handleBack} isTabContext={isTabContext} />
             ) : (
                 <OperatorPettyCashScreen
                     onBack={handleBack}
                     targetUserId={targetUserId}
                     targetUserName={targetUserName}
                     netBalance={netBalance}
+                    isTabContext={isTabContext}
                 />
             )}
         </View>

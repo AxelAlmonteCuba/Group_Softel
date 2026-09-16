@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/types';
@@ -17,6 +18,7 @@ import { useAdminPettyCash, AdminTrayTab } from '../hooks/useAdminPettyCash';
 interface Props {
     onBack?: () => void;
     onFilterPress?: () => void;
+    isTabContext?: boolean;
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -25,7 +27,7 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
  * Pantalla de Control de Fondos y Cajas Chicas para el Administrador y Contador.
  * Toda la lógica de estado, filtros, carga y auditoría se delega al hook useAdminPettyCash.
  */
-const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
+const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress, isTabContext }) => {
     const navigation = useNavigation<NavigationProp>();
     const {
         isAdmin,
@@ -48,7 +50,10 @@ const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
     } = useAdminPettyCash();
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView 
+            style={{ flex: 1, backgroundColor: colors.background }}
+            edges={isTabContext ? ['right', 'left'] : ['top', 'right', 'bottom', 'left']}
+        >
             {/* Cabecera limpia */}
             <HeaderBar
                 title="Control de Fondos"
@@ -129,7 +134,7 @@ const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
                                     key={caja.id}
                                     caja={caja}
                                     onPress={() => {
-                                        navigation.navigate('PettyCashDetail', { id: caja.id });
+                                        navigation.navigate('PettyCashDetail', { id: caja.id, mode: 'revision' });
                                     }}
                                 />
                             ))}
@@ -182,7 +187,7 @@ const AdminPettyCashScreen: React.FC<Props> = ({ onBack, onFilterPress }) => {
                 onConfirm={directAudit.submitAuditDecision}
                 loading={directAudit.submittingAudit}
             />
-        </View>
+        </SafeAreaView>
     );
 };
 

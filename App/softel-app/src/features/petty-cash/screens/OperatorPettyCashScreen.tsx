@@ -26,15 +26,16 @@ interface Props {
     targetUserId?: string;
     targetUserName?: string;
     netBalance?: number;
+    isTabContext?: boolean;
 }
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 /**
- * Pantalla para "Mi Caja Chica" y "Mis Reembolsos Directos" (Supervisor y Trabajador).
- * Toda la lógica de consulta, filtros reactivos, historial y estados se delega al hook useOperatorPettyCash.
+ * Pantalla de Control de Fondos y Cajas Chicas para el Supervisor y Trabajador.
+ * Lógica y estado delegados al hook useOperatorPettyCash.
  */
-const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress, targetUserId, targetUserName, netBalance }) => {
+const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress, targetUserId, targetUserName, netBalance, isTabContext }) => {
     const navigation = useNavigation<NavigationProp>();
     const {
         selectedTab,
@@ -57,11 +58,14 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress, targ
     };
 
     const handlePressDetail = (item: HistoryPettyCashItem) => {
-        navigation.navigate('PettyCashDetail', { id: item.id });
+        navigation.navigate('PettyCashDetail', { id: item.id, mode: 'registro' });
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView 
+            style={{ flex: 1, backgroundColor: colors.background }}
+            edges={isTabContext ? ['right', 'left'] : ['top', 'right', 'bottom', 'left']}
+        >
             {/* Cabecera limpia estándar reutilizable */}
             <HeaderBar
                 title={targetUserId
@@ -132,7 +136,7 @@ const OperatorPettyCashScreen: React.FC<Props> = ({ onBack, onHistoryPress, targ
                             ) : cajaEnProceso ? (
                                 <TouchableOpacity
                                     activeOpacity={0.8}
-                                    onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id })}
+                                    onPress={() => navigation.navigate('PettyCashDetail', { id: cajaEnProceso.id, mode: 'registro' })}
                                     style={{ marginTop: 4, marginBottom: 12 }}
                                 >
                                     <CardActivePettyCash caja={cajaEnProceso} />

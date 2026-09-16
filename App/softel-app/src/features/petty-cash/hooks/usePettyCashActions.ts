@@ -26,6 +26,7 @@ export interface ActionButtonConfig {
 interface UsePettyCashActionsProps {
     caja: PettyCashResponse | null;
     onStatusUpdated?: (updatedCaja: PettyCashResponse) => void;
+    viewMode?: 'registro' | 'revision';
 }
 
 /**
@@ -36,6 +37,7 @@ interface UsePettyCashActionsProps {
 export const usePettyCashActions = ({
     caja,
     onStatusUpdated,
+    viewMode = 'registro',
 }: UsePettyCashActionsProps) => {
     const navigation = useNavigation<NavigationProp>();
     const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -49,8 +51,8 @@ export const usePettyCashActions = ({
 
         const role = usuario?.rol || 'TRABAJADOR';
 
-        // 1. Si NO es Administrador:
-        if (role !== 'ADMINISTRADOR') {
+        // 1. Si NO es Administrador o está en modo 'registro':
+        if (role !== 'ADMINISTRADOR' || viewMode === 'registro') {
             if (caja.status === 'ABIERTA') {
                 return {
                     primary: null, // El registro de gasto se realiza mediante el botón flotante '+'
