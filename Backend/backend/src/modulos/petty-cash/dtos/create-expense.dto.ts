@@ -31,6 +31,9 @@ export class CreateExpenseDto {
   reason!: string;
 
   @IsNotEmpty({ message: 'La fecha del gasto es obligatoria.' })
-  @IsDateString({}, { message: 'La fecha debe tener formato ISO válido (YYYY-MM-DD).' })
+  @IsDateString(
+    {},
+    { message: 'La fecha debe tener formato ISO válido (YYYY-MM-DD).' },
+  )
   expenseDate!: string;
 }

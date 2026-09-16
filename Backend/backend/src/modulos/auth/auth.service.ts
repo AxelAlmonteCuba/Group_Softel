@@ -67,7 +67,7 @@ export class AuthService {
 
     // Payload del token: datos mínimos para identificar al usuario en cada request
     const payload = {
-      sub: usuario.id,       // 'sub' es el claim estándar JWT para el ID del sujeto
+      sub: usuario.id, // 'sub' es el claim estándar JWT para el ID del sujeto
       correo: usuario.correo,
       rol: usuario.rol,
     };
@@ -80,7 +80,7 @@ export class AuthService {
 
     return {
       access_token,
-      usuario: usuarioSinClave as Omit<User, 'clave_hash'>,
+      usuario: usuarioSinClave,
     };
   }
 
@@ -93,7 +93,9 @@ export class AuthService {
    *
    * @param usuarioId Identificador (UUID) del usuario autenticado
    */
-  async logout(usuarioId: string): Promise<{ exito: boolean; mensaje: string }> {
+  async logout(
+    usuarioId: string,
+  ): Promise<{ exito: boolean; mensaje: string }> {
     return {
       exito: true,
       mensaje: 'Sesión cerrada exitosamente',

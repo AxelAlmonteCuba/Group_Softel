@@ -1,14 +1,17 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { PettyCashService } from '../services/petty-cash.service';
 import { CreatePettyCashDto } from '../dtos/create-petty-cash.dto';
-import { UpdatePettyCashStatusDto, PettyCashAction } from '../dtos/update-petty-cash-status.dto';
+import {
+  UpdatePettyCashStatusDto,
+  PettyCashAction,
+} from '../dtos/update-petty-cash-status.dto';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { GetUser } from '../../../common/decorators/get-user.decorator';
 import { ForbiddenException } from '@nestjs/common';
 
 @Controller('cajas-chicas')
 export class PettyCashController {
-  constructor(private readonly pettyCashService: PettyCashService) { }
+  constructor(private readonly pettyCashService: PettyCashService) {}
 
   @Post()
   @Roles('SUPERVISOR', 'ADMINISTRADOR')
@@ -29,29 +32,38 @@ export class PettyCashController {
   ) {
     switch (dto.action) {
       case PettyCashAction.APPROVE:
-        if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede aprobar.');
+        if (role !== 'ADMINISTRADOR')
+          throw new ForbiddenException('Solo el Administrador puede aprobar.');
         return await this.pettyCashService.approvePettyCash(id, userId);
 
       case PettyCashAction.REJECT:
-        if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede rechazar.');
+        if (role !== 'ADMINISTRADOR')
+          throw new ForbiddenException('Solo el Administrador puede rechazar.');
         return await this.pettyCashService.rejectPettyCash(id, userId);
 
       case PettyCashAction.OPEN:
-        if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede abrir (entregar fondo).');
+        if (role !== 'ADMINISTRADOR')
+          throw new ForbiddenException(
+            'Solo el Administrador puede abrir (entregar fondo).',
+          );
         return await this.pettyCashService.openPettyCash(id);
 
       case PettyCashAction.REVIEW:
         if (role !== 'SUPERVISOR' && role !== 'ADMINISTRADOR') {
-          throw new ForbiddenException('Solo el Supervisor o Administrador puede mandar a revisión.');
+          throw new ForbiddenException(
+            'Solo el Supervisor o Administrador puede mandar a revisión.',
+          );
         }
         return await this.pettyCashService.reviewPettyCash(id);
 
       case PettyCashAction.CLOSE:
-        if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede cerrar.');
+        if (role !== 'ADMINISTRADOR')
+          throw new ForbiddenException('Solo el Administrador puede cerrar.');
         return await this.pettyCashService.closePettyCash(id);
 
       case PettyCashAction.LIQUIDATE:
-        if (role !== 'ADMINISTRADOR') throw new ForbiddenException('Solo el Administrador puede liquidar.');
+        if (role !== 'ADMINISTRADOR')
+          throw new ForbiddenException('Solo el Administrador puede liquidar.');
         return await this.pettyCashService.liquidatePettyCash(id);
 
       default:
@@ -83,4 +95,3 @@ export class PettyCashController {
     return await this.pettyCashService.findById(id);
   }
 }
-

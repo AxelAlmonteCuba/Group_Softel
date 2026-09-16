@@ -35,9 +35,9 @@ async function bootstrap() {
   // ValidationPipe global — valida y transforma DTOs en todos los endpoints
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,              // ignora campos no declarados en el DTO
-      forbidNonWhitelisted: true,   // error 400 si llegan campos extra
-      transform: true,              // convierte tipos automáticamente
+      whitelist: true, // ignora campos no declarados en el DTO
+      forbidNonWhitelisted: true, // error 400 si llegan campos extra
+      transform: true, // convierte tipos automáticamente
       transformOptions: { enableImplicitConversion: true },
     }),
   );

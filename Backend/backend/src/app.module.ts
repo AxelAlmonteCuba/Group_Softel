@@ -7,8 +7,10 @@ import { PettyCashModule } from './modulos/petty-cash/petty-cash.module';
 import { StorageModule } from './modulos/storage/storage.module';
 import { HealthModule } from './modulos/health/health.module';
 import { DashboardModule } from './modulos/dashboard/dashboard.module';
+import { NotificationsModule } from './modulos/notifications/notifications.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -44,6 +46,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     StorageModule,
     HealthModule,
     DashboardModule,
+    NotificationsModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [

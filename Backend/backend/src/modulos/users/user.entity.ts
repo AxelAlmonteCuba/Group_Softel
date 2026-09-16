@@ -44,6 +44,9 @@ export class User {
   })
   estado!: string;
 
+  @Column({ name: 'push_token', type: 'varchar', length: 255, nullable: true })
+  pushToken!: string | null;
+
   @CreateDateColumn({ type: 'timestamp', precision: 6 })
   creado_en!: Date;
 

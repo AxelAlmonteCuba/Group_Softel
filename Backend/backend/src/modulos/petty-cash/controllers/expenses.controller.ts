@@ -23,7 +23,7 @@ export class ExpensesController {
   constructor(
     private readonly expensesService: ExpensesService,
     private readonly storageService: StorageService,
-  ) { }
+  ) {}
 
   @Post()
   @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
@@ -58,7 +58,11 @@ export class ExpensesController {
     @Body() dto: EvaluateExpenseDto,
     @GetUser('id') adminUserId: string,
   ) {
-    return await this.expensesService.evaluateExpense(expenseId, dto, adminUserId);
+    return await this.expensesService.evaluateExpense(
+      expenseId,
+      dto,
+      adminUserId,
+    );
   }
 
   @Patch(':id')
@@ -116,7 +120,9 @@ export class ExpensesController {
   @Get('reembolsos-directos/pendientes/:usuarioId')
   @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
   async getPendingDirectReimbursements(@Param('usuarioId') usuarioId: string) {
-    return await this.expensesService.getPendingDirectReimbursementsByUser(usuarioId);
+    return await this.expensesService.getPendingDirectReimbursementsByUser(
+      usuarioId,
+    );
   }
 
   @Patch(':id/reembolsar')

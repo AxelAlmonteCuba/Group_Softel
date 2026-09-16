@@ -19,7 +19,12 @@ export class Expense {
   @JoinColumn({ name: 'caja_chica_id' })
   pettyCash!: PettyCash | null;
 
-  @Column({ name: 'caja_chica_id', type: 'varchar', length: 36, nullable: true })
+  @Column({
+    name: 'caja_chica_id',
+    type: 'varchar',
+    length: 36,
+    nullable: true,
+  })
   pettyCashId!: string | null;
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
@@ -40,7 +45,12 @@ export class Expense {
   @JoinColumn({ name: 'usuario_evaluador_id' })
   evaluatorUser!: User | null;
 
-  @Column({ name: 'usuario_evaluador_id', type: 'varchar', length: 36, nullable: true })
+  @Column({
+    name: 'usuario_evaluador_id',
+    type: 'varchar',
+    length: 36,
+    nullable: true,
+  })
   evaluatorUserId!: string | null;
 
   @Column({ name: 'monto', type: 'decimal', precision: 10, scale: 2 })
@@ -60,7 +70,12 @@ export class Expense {
   })
   status!: string;
 
-  @Column({ name: 'comentarios_auditoria', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'comentarios_auditoria',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   evaluationComment!: string | null;
 
   @Column({ name: 'fecha_gasto', type: 'date' })

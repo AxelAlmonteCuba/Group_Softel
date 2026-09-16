@@ -25,6 +25,9 @@ export class UpdateExpenseDto {
   reason?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'La fecha debe tener formato ISO válido (YYYY-MM-DD).' })
+  @IsDateString(
+    {},
+    { message: 'La fecha debe tener formato ISO válido (YYYY-MM-DD).' },
+  )
   expenseDate?: string;
 }

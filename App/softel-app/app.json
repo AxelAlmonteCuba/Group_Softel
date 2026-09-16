@@ -6,6 +6,16 @@
     "orientation": "portrait",
     "icon": "./assets/images/logo_login_final_2.jpg",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo_login_final_2.jpg",
+          "color": "#B42318",
+          "defaultChannel": "softel-default"
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.softel.syncrix"
@@ -13,6 +23,7 @@
     "android": {
       "package": "com.softel.syncrix",
       "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#B42318",
         "foregroundImage": "./assets/images/logo_login_final_2.jpg",
@@ -32,3 +43,4 @@
     "owner": "groupsoftel"
   }
 }
+

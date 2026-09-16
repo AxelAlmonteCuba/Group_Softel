@@ -2,8 +2,12 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './src/navigation/RootNavigator';
+import { usePushNotifications } from './src/hooks/usePushNotifications';
 
 export default function App() {
+  // Inicializamos el listener de notificaciones a nivel raíz
+  usePushNotifications();
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>

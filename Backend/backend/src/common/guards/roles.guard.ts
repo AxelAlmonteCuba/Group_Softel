@@ -37,7 +37,9 @@ export class RolesGuard implements CanActivate {
     }
 
     // El usuario ya fue validado y adjuntado al request por JwtAuthGuard
-    const { user } = context.switchToHttp().getRequest<{ user: { rol: string } }>();
+    const { user } = context
+      .switchToHttp()
+      .getRequest<{ user: { rol: string } }>();
 
     const tieneRol = rolesRequeridos.includes(user?.rol);
 

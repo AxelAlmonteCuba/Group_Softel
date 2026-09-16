@@ -30,7 +30,12 @@ export class PettyCash {
   @Column({ name: 'monto_asignado', type: 'decimal', precision: 10, scale: 2 })
   assignedAmount!: number;
 
-  @Column({ name: 'justificacion', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'justificacion',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   justification!: string | null;
 
   @Column({ name: 'proyecto_id', type: 'char', length: 36, nullable: true })
@@ -39,7 +44,13 @@ export class PettyCash {
   @Column({ name: 'saldo_actual', type: 'decimal', precision: 10, scale: 2 })
   currentBalance!: number;
 
-  @Column({ name: 'saldo_final', type: 'decimal', precision: 10, scale: 2, default: 0.0 })
+  @Column({
+    name: 'saldo_final',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0.0,
+  })
   finalBalance!: number;
 
   @Column({

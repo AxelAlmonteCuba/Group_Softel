@@ -34,10 +34,10 @@ export class HealthController {
     const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
     const isCloudinaryActive = Boolean(
       cloudName &&
-        apiKey &&
-        apiSecret &&
-        !cloudName.startsWith('tu_') &&
-        !cloudName.includes('placeholder'),
+      apiKey &&
+      apiSecret &&
+      !cloudName.startsWith('tu_') &&
+      !cloudName.includes('placeholder'),
     );
 
     const healthData = {
@@ -60,8 +60,10 @@ export class HealthController {
       sistema: {
         memoria_ram_mb: {
           rss: Math.round((memoryUsage.rss / 1024 / 1024) * 100) / 100,
-          heap_total: Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
-          heap_usado: Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100,
+          heap_total:
+            Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
+          heap_usado:
+            Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100,
         },
         entorno: process.env.ENTORNO ?? 'desarrollo',
         version_api: '0.0.1',

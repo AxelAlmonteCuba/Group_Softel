@@ -1,10 +1,15 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PettyCash } from '../entities/petty-cash.entity';
 import { Expense } from '../entities/expense.entity';
 import { User } from '../../users/user.entity';
 import { CreatePettyCashDto } from '../dtos/create-petty-cash.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PettyCashService {
@@ -14,12 +19,16 @@ export class PettyCashService {
     @InjectRepository(Expense)
     private readonly expenseRepository: Repository<Expense>,
     private readonly dataSource: DataSource,
-  ) { }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * Crea una caja chica en estado SOLICITADA. (Fase 2.2 - A)
    */
-  async requestPettyCash(dto: CreatePettyCashDto, managerUserId: string): Promise<PettyCash> {
+  async requestPettyCash(
+    dto: CreatePettyCashDto,
+    managerUserId: string,
+  ): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -36,7 +45,9 @@ export class PettyCashService {
       });
 
       if (activePettyCash) {
-        throw new BadRequestException('El usuario ya tiene una caja chica activa o en proceso.');
+        throw new BadRequestException(
+          'El usuario ya tiene una caja chica activa o en proceso.',
+        );
       }
 
       const newPettyCash = queryRunner.manager.create(PettyCash, {
@@ -50,6 +61,17 @@ export class PettyCashService {
       });
 
       const saved = await queryRunner.manager.save(newPettyCash);
+
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: managerUserId },
+      });
+      if (user) {
+        this.eventEmitter.emit('pettycash.requested', {
+          encargadoName: `${user.nombres} ${user.apellidos}`,
+          amount: dto.assignedAmount,
+        });
+      }
+
       await queryRunner.commitTransaction();
       return saved;
     } catch (error) {
@@ -63,20 +85,27 @@ export class PettyCashService {
   /**
    * Transaccional: Pasa la caja de SOLICITADA a APROBADA y registra al aprobador.
    */
-  async approvePettyCash(pettyCashId: string, evaluatorUserId: string): Promise<PettyCash> {
+  async approvePettyCash(
+    pettyCashId: string,
+    evaluatorUserId: string,
+  ): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const pettyCash = await queryRunner.manager.findOne(PettyCash, { where: { id: pettyCashId } });
+      const pettyCash = await queryRunner.manager.findOne(PettyCash, {
+        where: { id: pettyCashId },
+      });
 
       if (!pettyCash) {
         throw new NotFoundException('Caja chica no encontrada.');
       }
 
       if (pettyCash.status !== 'SOLICITADA') {
-        throw new BadRequestException('Solo se pueden aprobar cajas en estado SOLICITADA.');
+        throw new BadRequestException(
+          'Solo se pueden aprobar cajas en estado SOLICITADA.',
+        );
       }
 
       pettyCash.status = 'APROBADA';
@@ -97,20 +126,27 @@ export class PettyCashService {
   /**
    * Pasa la caja de SOLICITADA a RECHAZADA.
    */
-  async rejectPettyCash(pettyCashId: string, evaluatorUserId: string): Promise<PettyCash> {
+  async rejectPettyCash(
+    pettyCashId: string,
+    evaluatorUserId: string,
+  ): Promise<PettyCash> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const pettyCash = await queryRunner.manager.findOne(PettyCash, { where: { id: pettyCashId } });
+      const pettyCash = await queryRunner.manager.findOne(PettyCash, {
+        where: { id: pettyCashId },
+      });
 
       if (!pettyCash) {
         throw new NotFoundException('Caja chica no encontrada.');
       }
 
       if (pettyCash.status !== 'SOLICITADA') {
-        throw new BadRequestException('Solo se pueden rechazar cajas en estado SOLICITADA.');
+        throw new BadRequestException(
+          'Solo se pueden rechazar cajas en estado SOLICITADA.',
+        );
       }
 
       pettyCash.status = 'RECHAZADA';
@@ -131,14 +167,18 @@ export class PettyCashService {
    * Pasa la caja de APROBADA a ABIERTA y registra la fecha de apertura.
    */
   async openPettyCash(pettyCashId: string): Promise<PettyCash> {
-    const pettyCash = await this.pettyCashRepository.findOne({ where: { id: pettyCashId } });
+    const pettyCash = await this.pettyCashRepository.findOne({
+      where: { id: pettyCashId },
+    });
 
     if (!pettyCash) {
       throw new NotFoundException('Caja chica no encontrada.');
     }
 
     if (pettyCash.status !== 'APROBADA') {
-      throw new BadRequestException('Solo se pueden abrir cajas en estado APROBADA.');
+      throw new BadRequestException(
+        'Solo se pueden abrir cajas en estado APROBADA.',
+      );
     }
 
     pettyCash.status = 'ABIERTA';
@@ -151,33 +191,50 @@ export class PettyCashService {
    * Pasa la caja de ABIERTA a EN_REVISION (Supervisor terminó de rendir).
    */
   async reviewPettyCash(pettyCashId: string): Promise<PettyCash> {
-    const pettyCash = await this.pettyCashRepository.findOne({ where: { id: pettyCashId } });
+    const pettyCash = await this.pettyCashRepository.findOne({
+      where: { id: pettyCashId },
+      relations: { managerUser: true },
+    });
 
     if (!pettyCash) {
       throw new NotFoundException('Caja chica no encontrada.');
     }
 
     if (pettyCash.status !== 'ABIERTA') {
-      throw new BadRequestException('Solo se pueden poner en revisión cajas en estado ABIERTA.');
+      throw new BadRequestException(
+        'Solo se pueden poner en revisión cajas en estado ABIERTA.',
+      );
     }
 
     pettyCash.status = 'EN_REVISION';
 
-    return await this.pettyCashRepository.save(pettyCash);
+    const saved = await this.pettyCashRepository.save(pettyCash);
+
+    if (pettyCash.managerUser) {
+      this.eventEmitter.emit('pettycash.review_pending', {
+        managerName: `${pettyCash.managerUser.nombres} ${pettyCash.managerUser.apellidos}`,
+      });
+    }
+
+    return saved;
   }
 
   /**
    * Pasa la caja de EN_REVISION a CERRADA (Administrador finaliza auditoría y congela saldos).
    */
   async closePettyCash(pettyCashId: string): Promise<PettyCash> {
-    const pettyCash = await this.pettyCashRepository.findOne({ where: { id: pettyCashId } });
+    const pettyCash = await this.pettyCashRepository.findOne({
+      where: { id: pettyCashId },
+    });
 
     if (!pettyCash) {
       throw new NotFoundException('Caja chica no encontrada.');
     }
 
     if (pettyCash.status !== 'EN_REVISION' && pettyCash.status !== 'ABIERTA') {
-      throw new BadRequestException('Solo se pueden cerrar cajas en estado ABIERTA o EN_REVISION.');
+      throw new BadRequestException(
+        'Solo se pueden cerrar cajas en estado ABIERTA o EN_REVISION.',
+      );
     }
 
     pettyCash.status = 'CERRADA';
@@ -194,19 +251,24 @@ export class PettyCashService {
     await queryRunner.startTransaction();
 
     try {
-      const pettyCash = await queryRunner.manager.findOne(PettyCash, { where: { id: pettyCashId } });
+      const pettyCash = await queryRunner.manager.findOne(PettyCash, {
+        where: { id: pettyCashId },
+      });
 
       if (!pettyCash) {
         throw new NotFoundException('Caja chica no encontrada.');
       }
 
       if (pettyCash.status !== 'CERRADA') {
-        throw new BadRequestException('Solo se pueden liquidar cajas en estado CERRADA.');
+        throw new BadRequestException(
+          'Solo se pueden liquidar cajas en estado CERRADA.',
+        );
       }
 
       // Consulta de recálculo estricto de la regla 03 (solo APROBADOS)
       // Se utiliza el nombre de la columna física de la base de datos en las query en crudo
-      const result = await queryRunner.manager.createQueryBuilder()
+      const result = await queryRunner.manager
+        .createQueryBuilder()
         .select('COALESCE(SUM(gasto.monto), 0)', 'total_aprobado')
         .from('gastos', 'gasto')
         .where('gasto.caja_chica_id = :cajaId', { cajaId: pettyCashId })
@@ -216,7 +278,8 @@ export class PettyCashService {
       const totalApproved = parseFloat(result.total_aprobado);
 
       // Aplicar reglas matemáticas (con variables TS)
-      pettyCash.currentBalance = Number(pettyCash.assignedAmount) - totalApproved;
+      pettyCash.currentBalance =
+        Number(pettyCash.assignedAmount) - totalApproved;
       pettyCash.finalBalance = totalApproved - Number(pettyCash.assignedAmount);
 
       pettyCash.status = 'LIQUIDADA';
@@ -238,10 +301,26 @@ export class PettyCashService {
    * Obtiene la suma de gastos PENDIENTE y APROBADO para una lista de IDs de cajas chicas.
    * Evita consultas N+1 agrupando en una sola consulta SQL agregada.
    */
-  private async getExpenseSumsForPettyCashIds(
-    pettyCashIds: string[],
-  ): Promise<Map<string, { pendingAmount: number; approvedAmount: number; approvedCount: number; totalCount: number }>> {
-    const map = new Map<string, { pendingAmount: number; approvedAmount: number; approvedCount: number; totalCount: number }>();
+  private async getExpenseSumsForPettyCashIds(pettyCashIds: string[]): Promise<
+    Map<
+      string,
+      {
+        pendingAmount: number;
+        approvedAmount: number;
+        approvedCount: number;
+        totalCount: number;
+      }
+    >
+  > {
+    const map = new Map<
+      string,
+      {
+        pendingAmount: number;
+        approvedAmount: number;
+        approvedCount: number;
+        totalCount: number;
+      }
+    >();
     if (!pettyCashIds || pettyCashIds.length === 0) {
       return map;
     }
@@ -261,10 +340,7 @@ export class PettyCashService {
         "COALESCE(COUNT(CASE WHEN gasto.status = 'APROBADO' THEN 1 ELSE NULL END), 0)",
         'approvedCount',
       )
-      .addSelect(
-        "COUNT(gasto.id)",
-        'totalCount',
-      )
+      .addSelect('COUNT(gasto.id)', 'totalCount')
       .where('gasto.pettyCashId IN (:...pettyCashIds)', { pettyCashIds })
       .groupBy('gasto.pettyCashId')
       .getRawMany();
@@ -297,7 +373,12 @@ export class PettyCashService {
     const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
 
     return list.map((pc) => {
-      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
+      const sums = sumsMap.get(pc.id) || {
+        pendingAmount: 0,
+        approvedAmount: 0,
+        approvedCount: 0,
+        totalCount: 0,
+      };
       const currentBalance = Number(pc.currentBalance);
       const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -327,11 +408,11 @@ export class PettyCashService {
         },
         evaluatorUser: pc.evaluatorUser
           ? {
-            id: pc.evaluatorUser.id,
-            nombres: pc.evaluatorUser.nombres,
-            apellidos: pc.evaluatorUser.apellidos,
-            cargo: pc.evaluatorUser.cargo,
-          }
+              id: pc.evaluatorUser.id,
+              nombres: pc.evaluatorUser.nombres,
+              apellidos: pc.evaluatorUser.apellidos,
+              cargo: pc.evaluatorUser.cargo,
+            }
           : null,
       };
     });
@@ -354,7 +435,12 @@ export class PettyCashService {
     const sumsMap = await this.getExpenseSumsForPettyCashIds(ids);
 
     return list.map((pc) => {
-      const sums = sumsMap.get(pc.id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
+      const sums = sumsMap.get(pc.id) || {
+        pendingAmount: 0,
+        approvedAmount: 0,
+        approvedCount: 0,
+        totalCount: 0,
+      };
       const currentBalance = Number(pc.currentBalance);
       const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -384,11 +470,11 @@ export class PettyCashService {
         },
         evaluatorUser: pc.evaluatorUser
           ? {
-            id: pc.evaluatorUser.id,
-            nombres: pc.evaluatorUser.nombres,
-            apellidos: pc.evaluatorUser.apellidos,
-            cargo: pc.evaluatorUser.cargo,
-          }
+              id: pc.evaluatorUser.id,
+              nombres: pc.evaluatorUser.nombres,
+              apellidos: pc.evaluatorUser.apellidos,
+              cargo: pc.evaluatorUser.cargo,
+            }
           : null,
       };
     });
@@ -411,7 +497,12 @@ export class PettyCashService {
     }
 
     const sumsMap = await this.getExpenseSumsForPettyCashIds([id]);
-    const sums = sumsMap.get(id) || { pendingAmount: 0, approvedAmount: 0, approvedCount: 0, totalCount: 0 };
+    const sums = sumsMap.get(id) || {
+      pendingAmount: 0,
+      approvedAmount: 0,
+      approvedCount: 0,
+      totalCount: 0,
+    };
     const currentBalance = Number(pc.currentBalance);
     const effectiveBalance = currentBalance - sums.pendingAmount;
 
@@ -441,11 +532,11 @@ export class PettyCashService {
       },
       evaluatorUser: pc.evaluatorUser
         ? {
-          id: pc.evaluatorUser.id,
-          nombres: pc.evaluatorUser.nombres,
-          apellidos: pc.evaluatorUser.apellidos,
-          cargo: pc.evaluatorUser.cargo,
-        }
+            id: pc.evaluatorUser.id,
+            nombres: pc.evaluatorUser.nombres,
+            apellidos: pc.evaluatorUser.apellidos,
+            cargo: pc.evaluatorUser.cargo,
+          }
         : null,
     };
   }
@@ -481,10 +572,14 @@ export class PettyCashService {
       .getRawMany();
 
     const pettyCashMap = new Map<string, number>();
-    pettyCashRaw.forEach((row) => pettyCashMap.set(row.userId, Number(row.totalCaja)));
+    pettyCashRaw.forEach((row) =>
+      pettyCashMap.set(row.userId, Number(row.totalCaja)),
+    );
 
     const directExpensesMap = new Map<string, number>();
-    directExpensesRaw.forEach((row) => directExpensesMap.set(row.userId, Number(row.totalDirect)));
+    directExpensesRaw.forEach((row) =>
+      directExpensesMap.set(row.userId, Number(row.totalDirect)),
+    );
 
     const balances = users.map((user) => {
       const cajaBalance = pettyCashMap.get(user.id) || 0;
@@ -508,4 +603,3 @@ export class PettyCashService {
       .sort((a, b) => b.netBalance - a.netBalance);
   }
 }
-

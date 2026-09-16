@@ -53,7 +53,7 @@ export class UsersService {
       nombres: dto.nombres,
       apellidos: dto.apellidos,
       correo: dto.correo,
-      clave_hash,           // se guarda el hash, no la clave original
+      clave_hash, // se guarda el hash, no la clave original
       cargo: dto.cargo,
       rol: dto.rol,
       // estado por defecto: ACTIVO (definido en la entidad con default)
@@ -162,7 +162,9 @@ export class UsersService {
 
     // Construir objeto de actualización sin exponer clave_hash en el DTO público
     const datosActualizados: Partial<User> = {
-      ...(dto.documento_identidad && { documento_identidad: dto.documento_identidad }),
+      ...(dto.documento_identidad && {
+        documento_identidad: dto.documento_identidad,
+      }),
       ...(dto.nombres && { nombres: dto.nombres }),
       ...(dto.apellidos && { apellidos: dto.apellidos }),
       ...(dto.correo && { correo: dto.correo }),
@@ -173,11 +175,32 @@ export class UsersService {
     };
 
     await this.userRepository.update(id, datosActualizados);
-    const usuarioActualizado = await this.userRepository.findOne({ where: { id } });
+    const usuarioActualizado = await this.userRepository.findOne({
+      where: { id },
+    });
 
     // Retornar sin clave_hash
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { clave_hash: _, ...usuarioSinClave } = usuarioActualizado!;
     return usuarioSinClave;
+  }
+
+  /**
+   * Guarda o actualiza el token de notificaciones Push (Expo) del usuario.
+   */
+  async updatePushToken(
+    id: string,
+    pushToken: string,
+  ): Promise<{ mensaje: string }> {
+    const usuarioEncontrado = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!usuarioEncontrado) {
+      throw new NotFoundException(`Usuario con id '${id}' no encontrado`);
+    }
+
+    await this.userRepository.update(id, { pushToken });
+    return { mensaje: 'Push token actualizado correctamente' };
   }
 }

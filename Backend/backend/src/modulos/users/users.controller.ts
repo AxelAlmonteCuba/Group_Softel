@@ -12,6 +12,9 @@ import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { GetUser } from '../../common/decorators/get-user.decorator';
+import { UpdatePushTokenDto } from './dto/update-push-token.dto';
+import { Put } from '@nestjs/common';
 
 /**
  * Controlador de usuarios.
@@ -83,5 +86,18 @@ export class UsersController {
   @Patch(':id')
   updateUser(@Param('id') id: string, @Body() user: UpdateUserDto) {
     return this.userService.updateUser(id, user);
+  }
+
+  /**
+   * PUT /api/v1/users/token-push
+   * Registra o actualiza el token de notificaciones del usuario autenticado.
+   * Lo pueden consumir todos los roles, pero los mensajes solo se enviarán a los ADMINS.
+   */
+  @Put('token-push')
+  updatePushToken(
+    @GetUser('id') userId: string,
+    @Body() dto: UpdatePushTokenDto,
+  ) {
+    return this.userService.updatePushToken(userId, dto.token);
   }
 }

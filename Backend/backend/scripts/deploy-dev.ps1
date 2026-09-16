@@ -9,7 +9,7 @@ Set-Location -Path (Join-Path $PSScriptRoot "..")
 npm run build
 
 Write-Host "`n📦 [2/4] Empaquetando dist/ y transfiriendo a la VPS..." -ForegroundColor Cyan
-tar -czf dist.tar.gz dist
+tar -czf dist.tar.gz dist package.json package-lock.json ecosystem.config.js
 scp dist.tar.gz softel-vps:/opt/softel/
 ssh softel-vps "cd /opt/softel && tar -xzf dist.tar.gz && rm dist.tar.gz"
 Remove-Item dist.tar.gz -Force

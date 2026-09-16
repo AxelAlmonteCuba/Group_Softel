@@ -44,7 +44,11 @@ export class StorageService {
       val.includes('placeholder') ||
       val.length === 0;
 
-    if (isPlaceholder(cloudName) || isPlaceholder(apiKey) || isPlaceholder(apiSecret)) {
+    if (
+      isPlaceholder(cloudName) ||
+      isPlaceholder(apiKey) ||
+      isPlaceholder(apiSecret)
+    ) {
       return false;
     }
 
@@ -92,13 +96,17 @@ export class StorageService {
           process.env.CLOUDINARY_CARPETA_BASE?.trim() || `softel/${entorno}`;
         const folder = `${baseFolder}/${subFolder}/${year}/${month}`;
 
-        console.log(`[StorageService] Subiendo imagen a Cloudinary en carpeta: ${folder}`);
+        console.log(
+          `[StorageService] Subiendo imagen a Cloudinary en carpeta: ${folder}`,
+        );
         const uploadResult = await this.uploadToCloudinary(
           optimizedBuffer,
           folder,
           filename.replace('.webp', ''),
         );
-        console.log(`[StorageService] Imagen subida exitosamente a Cloudinary: ${uploadResult.secure_url}`);
+        console.log(
+          `[StorageService] Imagen subida exitosamente a Cloudinary: ${uploadResult.secure_url}`,
+        );
 
         return {
           relativePath: uploadResult.secure_url,
@@ -129,7 +137,10 @@ export class StorageService {
         filename,
       };
     } catch (error) {
-      console.error('Error al procesar/guardar imagen en StorageService:', error);
+      console.error(
+        'Error al procesar/guardar imagen en StorageService:',
+        error,
+      );
       throw new InternalServerErrorException(
         'Error al procesar y guardar la imagen (StorageService)',
       );
@@ -183,13 +194,17 @@ export class StorageService {
       const uploadIndex = url.indexOf('/image/upload/');
       if (uploadIndex === -1) return null;
 
-      let pathAfterUpload = url.substring(uploadIndex + '/image/upload/'.length);
+      let pathAfterUpload = url.substring(
+        uploadIndex + '/image/upload/'.length,
+      );
 
       // Quitar versión (ej: 'v1741549112/')
       const versionMatch = pathAfterUpload.match(/(?:^|\/)(v\d+)\//);
       if (versionMatch) {
         const vIndex = pathAfterUpload.indexOf(versionMatch[0]);
-        pathAfterUpload = pathAfterUpload.substring(vIndex + versionMatch[0].length);
+        pathAfterUpload = pathAfterUpload.substring(
+          vIndex + versionMatch[0].length,
+        );
       }
 
       // Quitar extensión final (.webp, .jpg, etc.)
@@ -200,7 +215,10 @@ export class StorageService {
 
       return pathAfterUpload;
     } catch (error) {
-      console.error('[StorageService] Error al extraer publicId de Cloudinary:', error);
+      console.error(
+        '[StorageService] Error al extraer publicId de Cloudinary:',
+        error,
+      );
       return null;
     }
   }
@@ -215,15 +233,22 @@ export class StorageService {
     if (!fileUrlOrPath) return false;
 
     // 1. Si es Cloudinary y está configurado
-    if (this.isCloudinaryConfigured() && fileUrlOrPath.includes('cloudinary.com')) {
+    if (
+      this.isCloudinaryConfigured() &&
+      fileUrlOrPath.includes('cloudinary.com')
+    ) {
       const publicId = this.extractPublicIdFromCloudinaryUrl(fileUrlOrPath);
       if (!publicId) {
-        console.warn(`[StorageService] No se pudo extraer publicId para eliminar: ${fileUrlOrPath}`);
+        console.warn(
+          `[StorageService] No se pudo extraer publicId para eliminar: ${fileUrlOrPath}`,
+        );
         return false;
       }
 
       try {
-        console.log(`[StorageService] Eliminando comprobante previo de Cloudinary -> publicId: ${publicId}`);
+        console.log(
+          `[StorageService] Eliminando comprobante previo de Cloudinary -> publicId: ${publicId}`,
+        );
         cloudinary.config({
           cloud_name: process.env.CLOUDINARY_CLOUD_NAME?.trim(),
           api_key: process.env.CLOUDINARY_API_KEY?.trim(),
@@ -236,10 +261,16 @@ export class StorageService {
           invalidate: true,
         });
 
-        console.log(`[StorageService] Resultado eliminación Cloudinary (${publicId}):`, result);
+        console.log(
+          `[StorageService] Resultado eliminación Cloudinary (${publicId}):`,
+          result,
+        );
         return result.result === 'ok';
       } catch (error) {
-        console.error(`[StorageService] Error al eliminar comprobante en Cloudinary (${publicId}):`, error);
+        console.error(
+          `[StorageService] Error al eliminar comprobante en Cloudinary (${publicId}):`,
+          error,
+        );
         return false;
       }
     }
@@ -251,14 +282,18 @@ export class StorageService {
         : fileUrlOrPath;
       const fullPath = path.join(this.uploadDir, localCleanPath);
       await fs.unlink(fullPath);
-      console.log(`[StorageService] Archivo local eliminado exitosamente: ${fullPath}`);
+      console.log(
+        `[StorageService] Archivo local eliminado exitosamente: ${fullPath}`,
+      );
       return true;
     } catch (error: any) {
       if (error?.code !== 'ENOENT') {
-        console.warn(`[StorageService] No se pudo eliminar archivo local (${fileUrlOrPath}):`, error?.message);
+        console.warn(
+          `[StorageService] No se pudo eliminar archivo local (${fileUrlOrPath}):`,
+          error?.message,
+        );
       }
       return false;
     }
   }
 }
-

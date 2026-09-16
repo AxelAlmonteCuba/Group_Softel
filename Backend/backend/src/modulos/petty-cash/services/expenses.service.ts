@@ -10,9 +10,13 @@ import { Expense } from '../entities/expense.entity';
 import { PettyCash } from '../entities/petty-cash.entity';
 import { User } from '../../users/user.entity';
 import { CreateExpenseDto } from '../dtos/create-expense.dto';
-import { EvaluateExpenseDto, ExpenseDecision } from '../dtos/evaluate-expense.dto';
+import {
+  EvaluateExpenseDto,
+  ExpenseDecision,
+} from '../dtos/evaluate-expense.dto';
 import { UpdateExpenseDto } from '../dtos/update-expense.dto';
 import { StorageService } from '../../storage/storage.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ExpensesService {
@@ -23,7 +27,8 @@ export class ExpensesService {
     private readonly pettyCashRepository: Repository<PettyCash>,
     private readonly dataSource: DataSource,
     private readonly storageService: StorageService,
-  ) { }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * Registra un gasto en estado PENDIENTE vinculado a una caja chica ABIERTA.
@@ -84,6 +89,17 @@ export class ExpensesService {
       });
 
       const saved = await queryRunner.manager.save(newExpense);
+
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: expenseUserId },
+      });
+      if (user) {
+        this.eventEmitter.emit('expense.created', {
+          userName: `${user.nombres} ${user.apellidos}`,
+          amount: dto.amount,
+        });
+      }
+
       await queryRunner.commitTransaction();
       return saved;
     } catch (error) {
@@ -104,7 +120,11 @@ export class ExpensesService {
     dto: EvaluateExpenseDto,
     evaluatorUserId: string,
   ): Promise<Expense> {
-    if ((dto.decision === ExpenseDecision.REJECTED || dto.decision === ExpenseDecision.OBSERVED) && !dto.evaluationComment) {
+    if (
+      (dto.decision === ExpenseDecision.REJECTED ||
+        dto.decision === ExpenseDecision.OBSERVED) &&
+      !dto.evaluationComment
+    ) {
       throw new BadRequestException(
         'El motivo es obligatorio al rechazar u observar un gasto.',
       );
@@ -127,7 +147,8 @@ export class ExpensesService {
       // Regla 01 y 04: Cajas LIQUIDADA o CERRADA tienen saldos y registros congelados
       if (
         expense.pettyCash &&
-        (expense.pettyCash.status === 'LIQUIDADA' || expense.pettyCash.status === 'CERRADA')
+        (expense.pettyCash.status === 'LIQUIDADA' ||
+          expense.pettyCash.status === 'CERRADA')
       ) {
         throw new BadRequestException(
           `La caja chica vinculada se encuentra en estado ${expense.pettyCash.status}. Sus gastos y saldos están congelados y no pueden ser modificados por ningún usuario.`,
@@ -144,7 +165,10 @@ export class ExpensesService {
       expense.status = dto.decision;
       expense.evaluatorUserId = evaluatorUserId;
 
-      if (dto.decision === ExpenseDecision.REJECTED || dto.decision === ExpenseDecision.OBSERVED) {
+      if (
+        dto.decision === ExpenseDecision.REJECTED ||
+        dto.decision === ExpenseDecision.OBSERVED
+      ) {
         expense.evaluationComment = dto.evaluationComment!;
       }
 
@@ -230,10 +254,10 @@ export class ExpensesService {
       },
       evaluatorUser: expense.evaluatorUser
         ? {
-          id: expense.evaluatorUser.id,
-          nombres: expense.evaluatorUser.nombres,
-          apellidos: expense.evaluatorUser.apellidos,
-        }
+            id: expense.evaluatorUser.id,
+            nombres: expense.evaluatorUser.nombres,
+            apellidos: expense.evaluatorUser.apellidos,
+          }
         : null,
     }));
   }
@@ -280,11 +304,11 @@ export class ExpensesService {
       },
       pettyCash: expense.pettyCash
         ? {
-          id: expense.pettyCash.id,
-          assignedAmount: expense.pettyCash.assignedAmount,
-          currentBalance: expense.pettyCash.currentBalance,
-          status: expense.pettyCash.status,
-        }
+            id: expense.pettyCash.id,
+            assignedAmount: expense.pettyCash.assignedAmount,
+            currentBalance: expense.pettyCash.currentBalance,
+            status: expense.pettyCash.status,
+          }
         : null,
     }));
   }
@@ -311,7 +335,8 @@ export class ExpensesService {
     // Regla 01 y 04: Cajas LIQUIDADA o CERRADA tienen gastos congelados
     if (
       expense.pettyCash &&
-      (expense.pettyCash.status === 'LIQUIDADA' || expense.pettyCash.status === 'CERRADA')
+      (expense.pettyCash.status === 'LIQUIDADA' ||
+        expense.pettyCash.status === 'CERRADA')
     ) {
       throw new BadRequestException(
         `La caja chica vinculada se encuentra en estado ${expense.pettyCash.status}. Sus gastos están congelados y no pueden ser modificados.`,
@@ -320,7 +345,9 @@ export class ExpensesService {
 
     // Validar que el usuario sea el creador del gasto o el encargado de la caja chica
     const isCreator = expense.expenseUserId === userId;
-    const isManager = Boolean(expense.pettyCash && expense.pettyCash.managerUserId === userId);
+    const isManager = Boolean(
+      expense.pettyCash && expense.pettyCash.managerUserId === userId,
+    );
 
     if (!isCreator && !isManager) {
       throw new BadRequestException(
@@ -330,7 +357,9 @@ export class ExpensesService {
 
     // Solo se puede editar si está OBSERVADO
     if (expense.status !== 'OBSERVADO') {
-      throw new BadRequestException('Solo se pueden editar gastos en estado OBSERVADO.');
+      throw new BadRequestException(
+        'Solo se pueden editar gastos en estado OBSERVADO.',
+      );
     }
 
     const previousReceiptUrl = expense.receiptUrl;
@@ -339,7 +368,8 @@ export class ExpensesService {
     if (dto.categoryId !== undefined) expense.categoryId = dto.categoryId;
     if (dto.amount !== undefined) expense.amount = dto.amount;
     if (dto.reason !== undefined) expense.reason = dto.reason;
-    if (dto.expenseDate !== undefined) expense.expenseDate = new Date(dto.expenseDate);
+    if (dto.expenseDate !== undefined)
+      expense.expenseDate = new Date(dto.expenseDate);
     if (newReceiptUrl !== undefined) expense.receiptUrl = newReceiptUrl;
 
     // Regresar a pendiente y limpiar la observación
@@ -350,9 +380,16 @@ export class ExpensesService {
     const savedExpense = await this.expenseRepository.save(expense);
 
     // Si se subió un nuevo comprobante diferente al anterior, eliminar el anterior de Cloudinary/disco
-    if (newReceiptUrl && previousReceiptUrl && previousReceiptUrl !== newReceiptUrl) {
+    if (
+      newReceiptUrl &&
+      previousReceiptUrl &&
+      previousReceiptUrl !== newReceiptUrl
+    ) {
       this.storageService.deleteFile(previousReceiptUrl).catch((err) => {
-        console.error('[ExpensesService] Error al eliminar comprobante previo en storage:', err);
+        console.error(
+          '[ExpensesService] Error al eliminar comprobante previo en storage:',
+          err,
+        );
       });
     }
 
@@ -394,20 +431,20 @@ export class ExpensesService {
       },
       expenseUser: expense.expenseUser
         ? {
-          id: expense.expenseUser.id,
-          nombres: expense.expenseUser.nombres,
-          apellidos: expense.expenseUser.apellidos,
-          documento_identidad: expense.expenseUser.documento_identidad,
-          rol: expense.expenseUser.rol,
-          cargo: expense.expenseUser.cargo,
-        }
+            id: expense.expenseUser.id,
+            nombres: expense.expenseUser.nombres,
+            apellidos: expense.expenseUser.apellidos,
+            documento_identidad: expense.expenseUser.documento_identidad,
+            rol: expense.expenseUser.rol,
+            cargo: expense.expenseUser.cargo,
+          }
         : null,
       evaluatorUser: expense.evaluatorUser
         ? {
-          id: expense.evaluatorUser.id,
-          nombres: expense.evaluatorUser.nombres,
-          apellidos: expense.evaluatorUser.apellidos,
-        }
+            id: expense.evaluatorUser.id,
+            nombres: expense.evaluatorUser.nombres,
+            apellidos: expense.evaluatorUser.apellidos,
+          }
         : null,
     }));
   }
@@ -416,7 +453,9 @@ export class ExpensesService {
    * Obtiene todos los reembolsos directos (sin caja chica) de un usuario específico.
    * Incluye todos sus comprobantes (en cualquier estado) y calcula el saldo a favor pendiente (totalOwed).
    */
-  async getPendingDirectReimbursementsByUser(userId: string): Promise<{ expenses: any[], totalOwed: number }> {
+  async getPendingDirectReimbursementsByUser(
+    userId: string,
+  ): Promise<{ expenses: any[]; totalOwed: number }> {
     const expenses = await this.expenseRepository.find({
       where: {
         expenseUserId: userId,
@@ -477,14 +516,15 @@ export class ExpensesService {
    * Obtiene un resumen de todos los usuarios que tienen reembolsos directos pendientes.
    */
   async getUsersWithPendingReimbursements(): Promise<any[]> {
-    const qb = this.expenseRepository.createQueryBuilder('expense')
+    const qb = this.expenseRepository
+      .createQueryBuilder('expense')
       .innerJoin('expense.expenseUser', 'user')
       .select([
         'user.id AS userId',
         'user.nombres AS nombres',
         'user.apellidos AS apellidos',
         'user.documento_identidad AS documento',
-        'COALESCE(SUM(expense.monto), 0) AS totalOwed'
+        'COALESCE(SUM(expense.monto), 0) AS totalOwed',
       ])
       .where('expense.caja_chica_id IS NULL')
       .andWhere("expense.estado = 'APROBADO'")
@@ -496,11 +536,11 @@ export class ExpensesService {
 
     const rawResults = await qb.getRawMany();
 
-    return rawResults.map(row => ({
+    return rawResults.map((row) => ({
       userId: row.userId,
       userNames: `${row.nombres} ${row.apellidos}`,
       document: row.documento,
-      totalOwed: parseFloat(row.totalOwed)
+      totalOwed: parseFloat(row.totalOwed),
     }));
   }
 
@@ -508,22 +548,30 @@ export class ExpensesService {
    * Marca un gasto directo como reembolsado (pagado).
    */
   async markAsReimbursed(expenseId: string): Promise<Expense> {
-    const expense = await this.expenseRepository.findOne({ where: { id: expenseId } });
+    const expense = await this.expenseRepository.findOne({
+      where: { id: expenseId },
+    });
 
     if (!expense) {
       throw new NotFoundException('Gasto no encontrado.');
     }
 
     if (expense.pettyCashId !== null) {
-      throw new BadRequestException('Solo los reembolsos directos (sin caja chica) pueden ser marcados como pagados manualmente.');
+      throw new BadRequestException(
+        'Solo los reembolsos directos (sin caja chica) pueden ser marcados como pagados manualmente.',
+      );
     }
 
     if (expense.status !== 'APROBADO') {
-      throw new BadRequestException('El gasto debe estar APROBADO para poder ser reembolsado.');
+      throw new BadRequestException(
+        'El gasto debe estar APROBADO para poder ser reembolsado.',
+      );
     }
 
     if (expense.isReimbursed) {
-      throw new BadRequestException('El gasto ya ha sido marcado como reembolsado.');
+      throw new BadRequestException(
+        'El gasto ya ha sido marcado como reembolsado.',
+      );
     }
 
     expense.isReimbursed = true;

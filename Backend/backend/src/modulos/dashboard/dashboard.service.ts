@@ -64,7 +64,10 @@ export class DashboardService {
         "COALESCE(SUM(CASE WHEN gasto.estado = 'PENDIENTE' THEN 1 ELSE 0 END), 0) AS pendingExpensesCount",
         "COALESCE(SUM(CASE WHEN gasto.estado = 'APROBADO' THEN 1 ELSE 0 END), 0) AS approvedExpensesCount",
       ])
-      .where('gasto.usuario_gasto_id = :userId OR caja.usuario_encargado_id = :userId', { userId })
+      .where(
+        'gasto.usuario_gasto_id = :userId OR caja.usuario_encargado_id = :userId',
+        { userId },
+      )
       .getRawOne();
 
     const activeBox = await this.pettyCashRepository.findOne({
