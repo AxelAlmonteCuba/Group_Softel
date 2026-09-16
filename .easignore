@@ -1,0 +1,43 @@
+# Ignorar dependencias en todos los subproyectos
+**/node_modules/
+
+# Ignorar builds y temporales de Expo
+**/.expo/
+**/dist/
+**/web-build/
+
+# Ignorar carpetas nativas y sus builds pesados
+**/android/
+**/ios/
+**/.kotlin/
+
+# Ignorar artefactos de builds anteriores
+*.apk
+*.aab
+*.ipa
+*.tar.gz
+*.zip
+**/*.apk
+**/*.aab
+
+# Ignorar archivos de debug y logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+
+# Ignorar archivos del sistema
+.DS_Store
+*.pem
+*.orig.*
+
+# Ignorar credenciales locales
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+**/.env*.local
+
+# Ignorar caché de Typescript
+**/*.tsbuildinfo

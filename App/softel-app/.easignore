@@ -1,0 +1,44 @@
+# Ignorar dependencias (se instalan en el servidor)
+node_modules/
+
+# Ignorar builds y temporales de Expo
+.expo/
+dist/
+web-build/
+
+# Ignorar carpetas nativas y sus builds pesados (EAS hace prebuild o usa las suyas)
+android/
+ios/
+.kotlin/
+
+# Ignorar historial de Git (suele pesar mucho)
+.git/
+
+# Ignorar artefactos de builds anteriores
+*.apk
+*.aab
+*.ipa
+*.tar.gz
+*.zip
+
+# Ignorar archivos de debug y logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+
+# Ignorar archivos del sistema
+.DS_Store
+*.pem
+*.orig.*
+
+# Ignorar credenciales locales (EAS usa las que configuraste en tu cuenta)
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.env*.local
+
+# Ignorar caché de Typescript
+*.tsbuildinfo
