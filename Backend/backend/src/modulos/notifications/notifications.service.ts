@@ -90,4 +90,52 @@ export class NotificationsService {
       { screen: 'PettyCash' },
     );
   }
+
+  @OnEvent('pettycash.user_liquidated', { async: true })
+  async handleUserLiquidated(payload: {
+    userId: string;
+    cajasLiquidadas: number;
+    reembolsosLiquidados: number;
+    cajaBalance: number;
+    directBalance: number;
+    netBalance: number;
+  }) {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.userId },
+    });
+
+    if (!user?.pushToken || !Expo.isExpoPushToken(user.pushToken)) {
+      this.logger.debug(
+        `Usuario ${payload.userId} sin token push válido. Omitido.`,
+      );
+      return;
+    }
+
+    let bodyMessage: string;
+    if (payload.netBalance > 0) {
+      bodyMessage = `La empresa te reembolsará S/ ${payload.netBalance.toFixed(2)}.`;
+    } else if (payload.netBalance < 0) {
+      bodyMessage = `Debes devolver S/ ${Math.abs(payload.netBalance).toFixed(2)} a la empresa.`;
+    } else {
+      bodyMessage = `Cuentas cuadradas, sin saldo pendiente.`;
+    }
+
+    const message: ExpoPushMessage = {
+      to: user.pushToken,
+      sound: 'default',
+      title: '✅ Cuenta Liquidada',
+      body: bodyMessage,
+      data: { screen: 'PettyCash' },
+    };
+
+    try {
+      await this.expo.sendPushNotificationsAsync([message]);
+      this.logger.log(
+        `Notificación de liquidación enviada a ${user.nombres} ${user.apellidos}.`,
+      );
+    } catch (error) {
+      this.logger.error(`Error enviando notificación de liquidación: ${error}`);
+    }
+  }
+
 }

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, EntityManager, IsNull } from 'typeorm';
 import { PettyCash } from '../entities/petty-cash.entity';
 import { Expense } from '../entities/expense.entity';
 import { User } from '../../users/user.entity';
@@ -601,5 +601,127 @@ export class PettyCashService {
     return balances
       .filter((b) => b.netBalance !== 0)
       .sort((a, b) => b.netBalance - a.netBalance);
+  }
+
+  /**
+   * Calcula el balance pendiente de liquidación para un usuario específico.
+   * Método privado reutilizado por getUserBalances() y liquidateByUser().
+   *
+   * @param userId       ID del usuario a consultar
+   * @param manager      EntityManager (de queryRunner para transacciones, o this.dataSource.manager)
+   */
+  private async computeUserPendingBalance(
+    userId: string,
+    manager: EntityManager,
+  ): Promise<{ cajaBalance: number; directBalance: number; netBalance: number }> {
+    // saldo_final de cajas CERRADAS (ya precalculado en cada aprobación de gasto)
+    const cajaRaw = await manager
+      .createQueryBuilder(PettyCash, 'caja')
+      .select('COALESCE(SUM(caja.saldo_final), 0)', 'total')
+      .where("caja.estado = 'CERRADA'")
+      .andWhere('caja.usuario_encargado_id = :userId', { userId })
+      .getRawOne();
+
+    const cajaBalance = Number(cajaRaw?.total ?? 0);
+
+    // Suma de gastos directos APROBADOS y aún no reembolsados
+    const directRaw = await manager
+      .createQueryBuilder(Expense, 'gasto')
+      .select('COALESCE(SUM(gasto.monto), 0)', 'total')
+      .where('gasto.caja_chica_id IS NULL')
+      .andWhere("gasto.estado = 'APROBADO'")
+      .andWhere('gasto.reembolsado = false')
+      .andWhere('gasto.usuario_gasto_id = :userId', { userId })
+      .getRawOne();
+
+    const directBalance = Number(directRaw?.total ?? 0);
+
+    return {
+      cajaBalance,
+      directBalance,
+      netBalance: cajaBalance + directBalance,
+    };
+  }
+
+  /**
+   * TICKET 5 — Liquidación Consolidada por Usuario.
+   * 1. Lee el saldo pendiente del usuario vía computeUserPendingBalance().
+   * 2. Cambia todas sus cajas CERRADAS a LIQUIDADA (NO recalcula, usa saldo_final existente).
+   * 3. Marca todos sus reembolsos directos pendientes como reembolsado=true.
+   * 4. Emite el evento asíncrono de notificación Push.
+   */
+  async liquidateByUser(userId: string): Promise<{
+    cajasLiquidadas: number;
+    reembolsosLiquidados: number;
+    cajaBalance: number;
+    directBalance: number;
+    netBalance: number;
+  }> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Calcular balance ANTES de liquidar (usando el método privado compartido)
+      const { cajaBalance, directBalance, netBalance } =
+        await this.computeUserPendingBalance(userId, queryRunner.manager);
+
+      if (cajaBalance === 0 && directBalance === 0) {
+        throw new BadRequestException(
+          'Este usuario no tiene cajas CERRADAS ni reembolsos directos pendientes de liquidar.',
+        );
+      }
+
+      // 2. Buscar cajas CERRADAS y cambiar estado a LIQUIDADA + registrar fecha
+      const closedCajas = await queryRunner.manager.find(PettyCash, {
+        where: { managerUserId: userId, status: 'CERRADA' },
+      });
+
+      for (const caja of closedCajas) {
+        caja.status = 'LIQUIDADA';
+        caja.closingDate = new Date();
+        await queryRunner.manager.save(caja);
+      }
+
+      // 3. Marcar todos los reembolsos directos pendientes como pagados
+      const pendingReimbursements = await queryRunner.manager.find(Expense, {
+        where: {
+          expenseUserId: userId,
+          pettyCashId: IsNull(),
+          status: 'APROBADO',
+          isReimbursed: false,
+        },
+      });
+
+      for (const expense of pendingReimbursements) {
+        expense.isReimbursed = true;
+        await queryRunner.manager.save(expense);
+      }
+
+      await queryRunner.commitTransaction();
+
+      // 4. Emitir evento asíncrono DESPUÉS del commit
+      this.eventEmitter.emit('pettycash.user_liquidated', {
+        userId,
+        cajasLiquidadas: closedCajas.length,
+        reembolsosLiquidados: pendingReimbursements.length,
+        cajaBalance,
+        directBalance,
+        netBalance,
+      });
+
+      return {
+        cajasLiquidadas: closedCajas.length,
+        reembolsosLiquidados: pendingReimbursements.length,
+        cajaBalance,
+        directBalance,
+        netBalance,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

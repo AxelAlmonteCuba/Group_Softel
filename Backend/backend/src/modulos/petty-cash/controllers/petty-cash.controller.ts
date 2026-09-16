@@ -83,6 +83,12 @@ export class PettyCashController {
     return await this.pettyCashService.getUserBalances();
   }
 
+  @Post('liquidar/usuario/:userId')
+  @Roles('ADMINISTRADOR')
+  async liquidateByUser(@Param('userId') userId: string) {
+    return await this.pettyCashService.liquidateByUser(userId);
+  }
+
   @Get('usuario/:usuarioId')
   @Roles('ADMINISTRADOR', 'CONTADOR', 'SUPERVISOR', 'TRABAJADOR')
   async getPettyCashByUser(@Param('usuarioId') usuarioId: string) {
