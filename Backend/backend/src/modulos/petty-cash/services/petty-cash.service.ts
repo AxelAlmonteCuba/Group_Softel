@@ -114,6 +114,13 @@ export class PettyCashService {
       const savedPettyCash = await queryRunner.manager.save(pettyCash);
 
       await queryRunner.commitTransaction();
+
+      // Emitir evento para Notificaciones Push
+      this.eventEmitter.emit('pettycash.statusChanged', {
+        userId: savedPettyCash.managerUserId,
+        status: savedPettyCash.status,
+      });
+
       return savedPettyCash;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -154,6 +161,13 @@ export class PettyCashService {
 
       const rejected = await queryRunner.manager.save(pettyCash);
       await queryRunner.commitTransaction();
+
+      // Emitir evento para Notificaciones Push
+      this.eventEmitter.emit('pettycash.statusChanged', {
+        userId: rejected.managerUserId,
+        status: rejected.status,
+      });
+
       return rejected;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -209,6 +223,12 @@ export class PettyCashService {
     pettyCash.status = 'EN_REVISION';
 
     const saved = await this.pettyCashRepository.save(pettyCash);
+
+    // Emitir evento para Notificaciones Push
+    this.eventEmitter.emit('pettycash.statusChanged', {
+      userId: saved.managerUserId,
+      status: saved.status,
+    });
 
     if (pettyCash.managerUser) {
       this.eventEmitter.emit('pettycash.review_pending', {

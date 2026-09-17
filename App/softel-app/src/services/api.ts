@@ -11,7 +11,7 @@ export const API_ENV = {
 };
 
 // Configuración activa — Desarrollo
-const BASE_URL = API_ENV.LOCAL;
+const BASE_URL = API_ENV.PROD_VPS;
 
 export const api = axios.create({
   baseURL: BASE_URL,

@@ -54,6 +54,37 @@ export class NotificationsService {
     }
   }
 
+  /**
+   * Envia notificación push a un usuario específico por su ID.
+   */
+  async notifyUser(userId: string, title: string, body: string, data?: Record<string, unknown>) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user?.pushToken || !Expo.isExpoPushToken(user.pushToken)) {
+      this.logger.debug(`Usuario ${userId} sin token push válido. Omitido.`);
+      return;
+    }
+
+    const message: ExpoPushMessage = {
+      to: user.pushToken,
+      sound: 'default',
+      title,
+      body,
+      data: data || {},
+    };
+
+    try {
+      await this.expo.sendPushNotificationsAsync([message]);
+      this.logger.log(
+        `Notificación enviada a ${user.nombres} ${user.apellidos}.`,
+      );
+    } catch (error) {
+      this.logger.error(`Error enviando notificación Push: ${error}`);
+    }
+  }
+
   // ==========================================
   // LISTENERS DE EVENTOS DE CAJA CHICA
   // ==========================================
@@ -89,6 +120,40 @@ export class NotificationsService {
       `${payload.userName} registró un gasto de S/ ${payload.amount}.`,
       { screen: 'PettyCash' },
     );
+  }
+
+  @OnEvent('pettycash.statusChanged', { async: true })
+  async handlePettyCashStatusChanged(payload: {
+    userId: string;
+    status: string;
+  }) {
+    let title = 'Actualización de Caja Chica';
+    let body = `El estado de tu caja chica ha cambiado a ${payload.status}.`;
+
+    switch (payload.status) {
+      case 'APROBADA':
+        title = '✅ Solicitud Aprobada';
+        body = 'Tu solicitud de caja chica ha sido aprobada por Administración.';
+        break;
+      case 'RECHAZADA':
+        title = '❌ Solicitud Rechazada';
+        body = 'Tu solicitud de caja chica no fue aprobada.';
+        break;
+      case 'ABIERTA':
+        title = '💰 Fondos Entregados';
+        body = 'El fondo ha sido entregado. Ya puedes registrar gastos en tu caja chica.';
+        break;
+      case 'EN_REVISION':
+        title = '🔍 Caja en Revisión';
+        body = 'Tu caja chica está siendo auditada por Administración.';
+        break;
+      case 'CERRADA':
+        title = '🔒 Caja Cerrada';
+        body = 'Tu caja chica ha sido cerrada. Los saldos se han congelado para liquidación.';
+        break;
+    }
+
+    await this.notifyUser(payload.userId, title, body, { screen: 'PettyCash' });
   }
 
   @OnEvent('pettycash.user_liquidated', { async: true })

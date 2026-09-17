@@ -11,6 +11,7 @@ import CardDetailPettyCash from '@/components/cards/CardDetailPettyCash';
 import CardAmountsPettyCash from '@/components/cards/CardAmountsPettyCash';
 import CardRenderedExpenses from '@/components/cards/CardRenderedExpenses';
 import ButtonPrimary from '@/components/buttons/ButtonPrimary';
+import ButtonSecondary from '@/components/buttons/ButtonSecondary';
 import ButtonOutline from '@/components/buttons/ButtonOutline';
 import FabButton from '@/components/buttons/FabButton';
 import { usePettyCashActions } from '../hooks/usePettyCashActions';
@@ -132,7 +133,7 @@ const PettyCashDetailScreen: React.FC = () => {
                     <CardAmountsPettyCash caja={caja} />
 
                     {/* Botón Outline: Finalizar y Enviar a Revisión encima de Comprobantes Rendidos */}
-                    {secondaryActionConfig && (
+                    {secondaryActionConfig && caja?.status === 'ABIERTA' && (
                         <View style={{ marginTop: 14, marginBottom: 4 }}>
                             <ButtonOutline
                                 text={secondaryActionConfig.label}
@@ -183,22 +184,33 @@ const PettyCashDetailScreen: React.FC = () => {
                 />
             )}
 
-            {/* 5. Botón de Acción administrativa estático en la parte inferior */}
-            {!loading && actionConfig && (
+            {/* 5. Botones de Acción administrativa estáticos en la parte inferior */}
+            {!loading && (actionConfig || (secondaryActionConfig && caja?.status === 'SOLICITADA')) && (
                 <View
                     style={{
                         paddingHorizontal: 14,
                         paddingTop: 8,
                         paddingBottom: 12,
                         backgroundColor: colors.background,
+                        gap: 10,
                     }}
                 >
-                    <ButtonPrimary
-                        text={actionConfig.label}
-                        iconName={actionConfig.icon}
-                        onPress={() => executeAction(actionConfig)}
-                        loading={actionLoading}
-                    />
+                    {actionConfig && (
+                        <ButtonPrimary
+                            text={actionConfig.label}
+                            iconName={actionConfig.icon}
+                            onPress={() => executeAction(actionConfig)}
+                            loading={actionLoading}
+                        />
+                    )}
+                    {secondaryActionConfig && caja?.status === 'SOLICITADA' && (
+                        <ButtonSecondary
+                            text={secondaryActionConfig.label}
+                            iconName={secondaryActionConfig.icon}
+                            onPress={() => executeAction(secondaryActionConfig)}
+                            loading={actionLoading}
+                        />
+                    )}
                 </View>
             )}
         </SafeAreaView>

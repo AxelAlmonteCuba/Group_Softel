@@ -84,7 +84,15 @@ export const usePettyCashActions = ({
                         confirmMessage: '¿Estás seguro de aprobar esta solicitud de caja chica?',
                         variant: 'primary',
                     },
-                    secondary: null,
+                    secondary: {
+                        label: 'Rechazar Solicitud',
+                        icon: 'close-circle-outline',
+                        type: 'MUTATION',
+                        action: 'RECHAZAR',
+                        confirmTitle: 'Rechazar Solicitud',
+                        confirmMessage: '¿Estás completamente seguro de rechazar esta solicitud de caja chica?',
+                        variant: 'secondary',
+                    },
                 };
             case 'APROBADA':
                 return {

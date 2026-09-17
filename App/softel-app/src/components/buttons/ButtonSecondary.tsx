@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleProp, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { colors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { stylesComponents, stylesTexts } from '@/theme/styles';
@@ -10,6 +10,7 @@ interface props {
     iconName?: keyof typeof Ionicons.glyphMap;
     size?: 'medium' | 'small';
     disabled?: boolean;
+    loading?: boolean;
     style?: StyleProp<ViewStyle>;
     textStyle?: StyleProp<TextStyle>;
     iconSize?: number;
@@ -24,6 +25,7 @@ const ButtonSecondary: React.FC<props> = ({
     iconName,
     size = 'medium',
     disabled = false,
+    loading = false,
     style,
     textStyle,
     iconSize,
@@ -33,32 +35,39 @@ const ButtonSecondary: React.FC<props> = ({
 }) => {
     const isSmall = size === 'small';
     const computedIconSize = iconSize ?? (isSmall ? 18 : 20);
+    const isDisabled = disabled || loading;
 
     return (
         <TouchableOpacity
             onPress={onPress}
-            disabled={disabled}
-            activeOpacity={disabled ? 1 : activeOpacity}
+            disabled={isDisabled}
+            activeOpacity={isDisabled ? 1 : activeOpacity}
             style={[
                 stylesComponents.buttonSecondary,
                 isSmall && stylesComponents.buttonSmall,
-                disabled && stylesComponents.buttonDisabled,
+                isDisabled && stylesComponents.buttonDisabled,
                 style,
             ]}
         >
-            {iconName && (
-                <Ionicons name={iconName} size={computedIconSize} color={iconColor} />
+            {loading ? (
+                <ActivityIndicator size="small" color={iconColor} />
+            ) : (
+                <>
+                    {iconName && (
+                        <Ionicons name={iconName} size={computedIconSize} color={iconColor} />
+                    )}
+                    <Text
+                        numberOfLines={numberOfLines}
+                        style={[
+                            stylesTexts.textButtonOptionSec,
+                            isSmall && stylesTexts.textButtonSmall,
+                            textStyle,
+                        ]}
+                    >
+                        {text}
+                    </Text>
+                </>
             )}
-            <Text
-                numberOfLines={numberOfLines}
-                style={[
-                    stylesTexts.textButtonOptionSec,
-                    isSmall && stylesTexts.textButtonSmall,
-                    textStyle,
-                ]}
-            >
-                {text}
-            </Text>
         </TouchableOpacity>
     );
 };
